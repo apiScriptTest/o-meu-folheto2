@@ -4,24 +4,27 @@ let idParaApagar = null;
 let lojaAlvo = null;
 let acaoPendente = null;
 
-const ICONES_PRODUTOS = {
-    "leite": "🥛", "pao": "🍞", "pão": "🍞", "ovo": "🥚", "ovos": "🥚",
-    "cafe": "☕", "café": "☕", "arroz": "🍚", "massa": "🍝", "fruta": "🍎",
-    "maca": "🍎", "maçã": "🍎", "banana": "🍌", "carne": "🥩", "peixe": "🐟",
-    "cerveja": "🍺", "vinho": "🍷", "agua": "💧", "água": "💧", "papel": "🧻",
-    "detergente": "🧼", "batata": "🥔", "batatas": "🥔", "cebola": "🧅",
-    "iogurte": "🍦", "queijo": "🧀"
+// 1. Base de Dados de Ícones (Sistema de Palavras-Chave Inteligente)
+const ICONES_CHAVES = {
+    "ucal": "🍫", "chocolate": "🍫", "nesquik": "🥣", "detergente": "🧼", "fairy": "🧼",
+    "cenoura": "🥕", "batata": "🥔", "calca": "👖", "calça": "👖", "alho": "🧄",
+    "acucar": "🍬", "açúcar": "🍬", "banana": "🍌", "feijao": "🫘", "feijão": "🫘",
+    "lixivia": "🧴", "lixívia": "🧴", "kiwi": "🥝", "leite": "🥛", "pao": "🍞", "pão": "🍞",
+    "ovo": "🥚", "cafe": "☕", "café": "☕", "arroz": "🍚", "massa": "🍝",
+    "fruta": "🍎", "carne": "🥩", "peixe": "🐟", "cerveja": "🍺", "vinho": "🍷",
+    "agua": "💧", "água": "💧", "papel": "🧻", "iogurte": "🍦", "queijo": "🧀",
+    "shampoo": "🧴", "dentes": "🪥", "manteiga": "🧈", "azeite": "🫗", "frango": "🍗"
 };
 
-function obterIcone(texto) {
-    const palavra = texto.toLowerCase().trim();
-    for (const [chave, icone] of Object.entries(ICONES_PRODUTOS)) {
-        if (palavra.includes(chave)) return icone;
-    }
-    return "🛒";
-}
-
-const PRODUTOS_COMUNS = ["Leite", "Pão", "Ovos", "Arroz", "Massa", "Café", "Azeite", "Fruta", "Iogurtes", "Papel Higiénico", "Detergente", "Carne", "Peixe", "Batatas", "Cebolas"];
+// 2. Lista de Sugestões Base (v3.2)
+const PRODUTOS_COMUNS = [
+    "Ucal", "Pastilhas Fairy", "Nesquik", "Detergente", "Cenouras", 
+    "Batatas", "Calças", "Alho francês", "Açúcar", "Bananas", 
+    "Feijão frade", "Detergente roupa", "Lixívia", "Kiwi",
+    "Leite", "Pão", "Ovos", "Arroz", "Massa", "Café", "Azeite", 
+    "Fruta", "Iogurtes", "Papel Higiénico", "Carne", "Peixe", "Cebolas",
+    "Shampoo", "Pasta de dentes", "Frango", "Manteiga"
+];
 
 const lojasConfig = [
     { nome: 'LIDL', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Lidl-Logo.svg' },
@@ -32,8 +35,37 @@ const lojasConfig = [
     { nome: 'Intermarché', logo: 'https://intermarche.pt/images/logo-app.png' }
 ];
 
+// --- UTILITÁRIOS ---
+
+function normalizarTexto(texto) {
+    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function obterIcone(texto) {
+    const palavra = normalizarTexto(texto);
+    // Busca inteligente: verifica se alguma chave está contida no nome do item
+    for (const [chave, icone] of Object.entries(ICONES_CHAVES)) {
+        if (palavra.includes(normalizarTexto(chave))) return icone;
+    }
+    return "🛒";
+}
+
+function mostrarToast(mensagem) {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// --- LÓGICA DE INTERFACE ---
+
 function init() {
     folhetoConteudo.innerHTML = "";
+    
+    // 1. Gerar as secções das lojas
     lojasConfig.forEach(loja => {
         const section = document.createElement('section');
         section.className = 'loja-section';
@@ -44,14 +76,14 @@ function init() {
                     <span class="loja-nome">${loja.nome}</span>
                 </div>
                 <div class="loja-acoes">
-                    <button class="share-btn" onclick="partilharLista('${loja.nome}')"><i class="fas fa-paper-plane"></i></button>
+                    <button class="share-btn" onclick="partilharLojaUnica('${loja.nome}')"><i class="fas fa-paper-plane"></i></button>
                     <button class="limpar-btn" onclick="abrirModalLimpeza('${loja.nome}')"><i class="fas fa-broom"></i></button>
                     <button class="add-mini-btn" onclick="toggleInput('${loja.nome}')"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-            <div class="input-container" id="container-${loja.nome}" style="display:none; position:relative;">
+            <div class="input-container" id="container-${loja.nome}" style="display:none;">
                 <input type="text" id="input-${loja.nome}" placeholder="O que falta?" oninput="mostrarSugestoes('${loja.nome}')">
-                <div id="sugestoes-${loja.nome}" class="datalist-sugestoes"></div>
+                <div id="sugestoes-${loja.nome}" class="datalist-sugestoes"></div> 
                 <button class="ok-btn" onclick="adicionarItem('${loja.nome}')">OK</button>
             </div>
             <ul id="lista-${loja.nome}"></ul>
@@ -59,101 +91,84 @@ function init() {
         folhetoConteudo.appendChild(section);
         carregarItens(loja.nome);
     });
-}
 
-function partilharLista(loja) {
-    const itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
-    const pendentes = itens.filter(i => !i.comprado);
-
-    if (pendentes.length === 0) {
-        alert("Não há itens para partilhar!");
-        return;
-    }
-
-    // Criar a lista de nomes separada por vírgulas
-    const nomesItens = pendentes.map(i => i.texto).join(',');
-    
-    // Gerar o Link Mágico (usa a URL atual da página)
-    const baseUrl = window.location.href.split('?')[0];
-    const linkMagico = `${baseUrl}?loja=${encodeURIComponent(loja)}&itens=${encodeURIComponent(nomesItens)}`;
-
-    // Mensagem bonita para o WhatsApp
-    let msg = `*🛒 LISTA DO ${loja.toUpperCase()}*\n`;
-    msg += `Clica no link para adicionar à tua app:\n\n`;
-    msg += `${linkMagico}`;
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-function verificarLinkPartilhado() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const masterData = urlParams.get('master');
-
-    if (masterData) {
-        // Formato: LIDL:Pão,Leite|ALDI:Ovos
-        const blocosLoja = masterData.split('|');
-
-        blocosLoja.forEach(bloco => {
-            const [lojaNome, itensTexto] = bloco.split(':');
-            if (lojaNome && itensTexto) {
-                const nomes = itensTexto.split(',');
-                let itensAtuais = JSON.parse(localStorage.getItem(`compras_${lojaNome}`)) || [];
-
-                nomes.forEach(nome => {
-                    if (!itensAtuais.some(i => i.texto.toLowerCase() === nome.toLowerCase())) {
-                        itensAtuais.push({ id: Date.now() + Math.random(), texto: nome, comprado: false });
-                    }
-                });
-                localStorage.setItem(`compras_${lojaNome}`, JSON.stringify(itensAtuais));
-            }
-        });
-
-        window.history.replaceState({}, document.title, window.location.pathname);
-        init();
-        mostrarToast("Todas as listas foram atualizadas!");
+    // 2. Lógica para remover o Splash Screen
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        setTimeout(() => {
+            splash.style.opacity = '0';
+            // Remove do ecrã depois da animação de fade (0.6s)
+            setTimeout(() => {
+                splash.remove();
+            }, 600);
+        }, 1500); // Exibe a imagem por 1.5 segundos
     }
 }
 
-function partilharTudo() {
-    let dadosParaEnvio = [];
-    let resumoTexto = "";
+function mostrarSugestoes(loja) {
+    const input = document.getElementById(`input-${loja}`);
+    const divSugestoes = document.getElementById(`sugestoes-${loja}`);
+    const busca = normalizarTexto(input.value);
 
-    lojasConfig.forEach(loja => {
-        const itens = JSON.parse(localStorage.getItem(`compras_${loja.nome}`)) || [];
-        const pendentes = itens.filter(i => !i.comprado);
-        
-        if (pendentes.length > 0) {
-            const nomes = pendentes.map(i => i.texto).join(',');
-            dadosParaEnvio.push(`${loja.nome}:${nomes}`);
-            resumoTexto += `• *${loja.nome}* (${pendentes.length})\n`;
+    if (busca.length < 1) { 
+        divSugestoes.innerHTML = ""; 
+        return; 
+    }
+
+    // Auto-Aprendizagem: Junta itens base com itens que a mãe já escreveu antes
+    const personalizadas = JSON.parse(localStorage.getItem('sugestoes_extra')) || [];
+    const todasSugestoes = [...new Set([...PRODUTOS_COMUNS, ...personalizadas])];
+
+    // Filtra apenas se começar pela letra (startsWith) e ignora acentos
+    const filtrados = todasSugestoes
+    .filter(p => normalizarTexto(p).startsWith(busca))
+    .slice(0, 6); 
+
+    divSugestoes.innerHTML = filtrados.map(p => `
+        <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
+            <span>${obterIcone(p)}</span> <span>${p}</span>
+        </div>`).join('');
+}
+
+function adicionarItem(loja, textoManual = null) {
+    const input = document.getElementById(`input-${loja}`);
+    const texto = (textoManual || input.value).trim();
+    if (!texto) return;
+
+    // Aprendizagem: Guarda o novo item se ele não existir nas sugestões
+    if (!PRODUTOS_COMUNS.some(p => p.toLowerCase() === texto.toLowerCase())) {
+        let extra = JSON.parse(localStorage.getItem('sugestoes_extra')) || [];
+        if (!extra.some(e => e.toLowerCase() === texto.toLowerCase())) {
+            extra.push(texto);
+            localStorage.setItem('sugestoes_extra', JSON.stringify(extra));
         }
-    });
-
-    if (dadosParaEnvio.length === 0) {
-        mostrarToast("Não há nada para partilhar!"); // Feedback caso esteja vazio
-        return;
     }
 
-    const baseUrl = window.location.href.split('?')[0];
-    const linkMagico = `${baseUrl}?master=${encodeURIComponent(dadosParaEnvio.join('|'))}`;
-
-    let msg = `*📋 AS MINHAS LISTAS*\n\n${resumoTexto}\n🔗 *Importar:* ${linkMagico}`;
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    const item = { id: Date.now() + Math.random(), texto, comprado: false };
+    let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
+    itens.push(item);
+    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
     
-    mostrarToast("A abrir o WhatsApp..."); // Feedback de sucesso
+    input.value = "";
+    document.getElementById(`sugestoes-${loja}`).innerHTML = "";
+    if(!textoManual) toggleInput(loja);
+    carregarItens(loja);
+    mostrarToast("Adicionado!");
 }
 
 function carregarItens(loja) {
     const listaUl = document.getElementById(`lista-${loja}`);
     if(!listaUl) return;
     listaUl.innerHTML = "";
+    
     let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
     itens.sort((a, b) => a.comprado - b.comprado);
+
     itens.forEach(item => {
         const li = document.createElement('li');
         li.className = item.comprado ? 'comprado' : '';
-        li.id = `li-${item.id}`;
+        li.id = `li-${item.id}`; 
+        
         li.innerHTML = `
             <span class="item-texto" onclick="toggleItem('${loja}', ${item.id})">
                 <span class="emoji-icon">${obterIcone(item.texto)}</span> ${item.texto}
@@ -165,12 +180,93 @@ function carregarItens(loja) {
 }
 
 function toggleItem(loja, id) {
-    let itens = JSON.parse(localStorage.getItem(`compras_${loja}`));
-    const index = itens.findIndex(i => i.id === id);
-    itens[index].comprado = !itens[index].comprado;
-    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-    carregarItens(loja);
+    const li = document.getElementById(`li-${id}`);
+    if(!li) return;
+    
+    li.classList.add('item-saindo');
+
+    setTimeout(() => {
+        let itens = JSON.parse(localStorage.getItem(`compras_${loja}`));
+        const index = itens.findIndex(i => i.id === id);
+        
+        itens[index].comprado = !itens[index].comprado;
+        localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
+
+        carregarItens(loja);
+        
+        const novoLi = document.getElementById(`li-${id}`);
+        if(novoLi) novoLi.classList.add('item-entrando');
+    }, 400);
 }
+
+// --- PARTILHA MASTER ---
+
+function partilharTudo() {
+    let dadosParaEnvio = [];
+    let resumoTexto = "";
+
+    lojasConfig.forEach(loja => {
+        const itens = JSON.parse(localStorage.getItem(`compras_${loja.nome}`)) || [];
+        const pendentes = itens.filter(i => !i.comprado);
+        if (pendentes.length > 0) {
+            const nomes = pendentes.map(i => i.texto).join(',');
+            dadosParaEnvio.push(`${loja.nome}:${nomes}`);
+            resumoTexto += `• *${loja.nome}* (${pendentes.length})\n`;
+        }
+    });
+
+    if (dadosParaEnvio.length === 0) {
+        mostrarToast("Nada para partilhar!");
+        return;
+    }
+
+    const baseUrl = window.location.href.split('?')[0];
+    const linkMagico = `${baseUrl}?master=${encodeURIComponent(dadosParaEnvio.join('|'))}`;
+    const msg = `*📋 AS MINHAS LISTAS*\n\n${resumoTexto}\n🔗 *Importar:* ${linkMagico}`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    mostrarToast("WhatsApp aberto!");
+}
+
+function partilharLojaUnica(loja) {
+    const itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
+    const pendentes = itens.filter(i => !i.comprado);
+    if (pendentes.length === 0) return mostrarToast("Lista vazia!");
+
+    const nomes = pendentes.map(i => i.texto).join(',');
+    const baseUrl = window.location.href.split('?')[0];
+    const linkMagico = `${baseUrl}?master=${encodeURIComponent(loja + ':' + nomes)}`;
+    
+    const msg = `*🛒 LISTA ${loja}*\n🔗 *Importar:* ${linkMagico}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function verificarLinkPartilhado() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const masterData = urlParams.get('master');
+
+    if (masterData) {
+        const blocosLoja = masterData.split('|');
+        blocosLoja.forEach(bloco => {
+            const [lojaNome, itensTexto] = bloco.split(':');
+            if (lojaNome && itensTexto) {
+                const nomes = itensTexto.split(',');
+                let itensAtuais = JSON.parse(localStorage.getItem(`compras_${lojaNome}`)) || [];
+                nomes.forEach(nome => {
+                    if (!itensAtuais.some(i => i.texto.toLowerCase() === nome.toLowerCase())) {
+                        itensAtuais.push({ id: Date.now() + Math.random(), texto: nome, comprado: false });
+                    }
+                });
+                localStorage.setItem(`compras_${lojaNome}`, JSON.stringify(itensAtuais));
+            }
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        init();
+        mostrarToast("Listas atualizadas!");
+    }
+}
+
+// --- MODAIS E AUXILIARES ---
 
 function abrirModalApagar(id, loja) {
     idParaApagar = id; lojaAlvo = loja; acaoPendente = 'APAGAR_UM';
@@ -196,68 +292,23 @@ function confirmarAcao() {
     localStorage.setItem(`compras_${lojaAlvo}`, JSON.stringify(itens));
     carregarItens(lojaAlvo);
     fecharModal();
-}
-
-function adicionarItem(loja, textoManual = null) {
-    const input = document.getElementById(`input-${loja}`);
-    const texto = textoManual || input.value.trim();
-    if (!texto) return;
-    const item = { id: Date.now(), texto, comprado: false };
-    let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
-    itens.push(item);
-    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-    input.value = "";
-    document.getElementById(`sugestoes-${loja}`).innerHTML = "";
-    toggleInput(loja);
-    carregarItens(loja);
-}
-
-function mostrarSugestoes(loja) {
-    const input = document.getElementById(`input-${loja}`);
-    const divSugestoes = document.getElementById(`sugestoes-${loja}`);
-    const busca = input.value.toLowerCase().trim();
-    if (busca.length < 1) { divSugestoes.innerHTML = ""; return; }
-    const filtrados = PRODUTOS_COMUNS.filter(p => p.toLowerCase().startsWith(busca));
-    divSugestoes.innerHTML = filtrados.map(p => `
-        <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
-            <span>${obterIcone(p)}</span> <span>${p}</span>
-        </div>`).join('');
+    mostrarToast("Concluído!");
 }
 
 function fecharModal() { modal.style.display = "none"; }
 function toggleInput(loja) {
     const el = document.getElementById(`container-${loja}`);
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+    if(el.style.display === 'flex') document.getElementById(`input-${loja}`).focus();
 }
 
+// Service Worker
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`./sw.js?v=2.9`).then(reg => {
+        navigator.serviceWorker.register(`./sw.js?v=3.2`).then(reg => {
             reg.update();
-            reg.onupdatefound = () => {
-                const worker = reg.installing;
-                worker.onstatechange = () => {
-                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                        window.location.reload();
-                    }
-                };
-            };
         });
     });
-}
-
-function mostrarToast(mensagem) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
-    
-    container.appendChild(toast);
-
-    // Remove do HTML depois da animação acabar
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
 }
 
 init();

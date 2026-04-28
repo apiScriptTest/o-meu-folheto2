@@ -5,7 +5,11 @@ body { background-color: #f4f7f6; display: flex; justify-content: center; }
 header { text-align: center; padding: 20px 0; }
 header h2 { font-weight: 800; color: #2d3436; display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;}
 
-.loja-section { background: white; border-radius: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(0,0,0,0.03); }
+.loja-section {
+    overflow: visible !important; /* CRUCIAL: permite que a lista flutue para fora */
+    position: relative;
+    z-index: 1;
+}
 .loja-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to right, #ffffff, #fafafa); border-bottom: 2px solid #f8f9fa; }
 .loja-info { display: flex; align-items: center; gap: 12px; }
 .loja-logo { width: 30px; height: 30px; object-fit: contain; }
@@ -21,17 +25,59 @@ header h2 { font-weight: 800; color: #2d3436; display: flex; justify-content: ce
 
 .add-mini-btn { background: #2ecc71; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-size: 16px; }
 
-.input-container { padding: 15px; background: #fff; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid #eee; }
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-body); /* Ou a cor de fundo do card */
+    position: relative; /* Importante para a lista se guiar por aqui */
+    z-index: 10; /* Garante que o input fica acima dos itens da lista */
+}
 .input-container input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; font-size: 16px; }
 
 .ok-btn { background: #2d3436; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; }
 .ok-btn:active { background: #000; }
 
 ul { list-style: none; }
-li { padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f3f5; transition: 0.3s; }
-.comprado { background-color: #f8f9fa; opacity: 0.6; }
+li { padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f3f5; transition: 0.3s; transition: background-color 0.4s ease, opacity 0.4s ease; }
+.comprado { 
+    background-color: var(--item-bg-comprado) !important; 
+    opacity: 0.6; 
+}
 .item-texto { font-size: 17px; color: #2d3436; font-weight: 500; cursor: pointer; flex: 1; position: relative; }
-.comprado .item-texto { color: #adb5bd; text-decoration: line-through; }
+.comprado .item-texto { 
+    color: #ff7675 !important; /* Um tom de vermelho/coral profissional */
+    text-decoration: line-through !important; 
+}
+
+/* Animação de entrada */
+.item-entrando {
+    animation: fadeInSuave 0.5s ease forwards;
+}
+
+.item-saindo {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.4s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    .comprado .item-texto { 
+        color: #d63031 !important; /* Vermelho um pouco mais forte para contraste */
+    }
+}
+
+@keyframes fadeInSuave {
+    from { 
+        opacity: 0; 
+        transform: translateY(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
 
 .emoji-icon { margin-right: 10px; font-size: 1.2rem; }
 .delete-btn { color: #ffcccc; background: none; border: none; font-size: 18px; padding: 5px 10px; cursor: pointer; }
@@ -44,8 +90,34 @@ li { padding: 15px 20px; display: flex; align-items: center; justify-content: sp
 .btn-cancel { background: #f1f3f5; flex: 1; padding: 12px; border-radius: 12px; border: none; }
 .warning-icon { font-size: 45px; color: #f1c40f; margin-bottom: 15px; }
 
-.datalist-sugestoes { position: absolute; background: white; width: calc(100% - 30px); max-height: 220px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 100; top: 65px; border: 1px solid #dfe6e9; }
-.sugestao-item { padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-size: 16px; border-bottom: 1px solid #f1f3f5; }
+.datalist-sugestoes {
+    position: absolute;
+    top: 55px; /* Ajusta conforme a altura do teu input */
+    left: 10px;
+    right: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    z-index: 9999; /* Valor alto para ficar por cima de TUDO na app */
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+}
+.sugestao-item {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    background: white;
+    color: #333;
+}
+
+.sugestao-item:last-child { border-bottom: none; }
+.sugestao-item:hover {
+    background: #f8f8f8;
+}
 
 .toast-container {
     position: fixed;
@@ -116,4 +188,50 @@ li { padding: 15px 20px; display: flex; align-items: center; justify-content: sp
     justify-content: center;
     margin-bottom: 20px;
     padding: 0 5px;
+}
+
+
+#splash-screen {
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: #ffffff; /* Fundo branco para fundir com a imagem */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.splash-full-image {
+    max-width: 85%; /* Margem de segurança para não bater nas bordas */
+    height: auto;
+    /* Aplica a animação de entrada suave e depois a pulsação contínua */
+    animation: fadeInSplash 0.8s ease-out, pulseLoading 2.5s infinite ease-in-out 0.8s;
+}
+
+/* Animação única de entrada (Fade + Scale) */
+@keyframes fadeInSplash {
+    from { 
+        opacity: 0; 
+        transform: scale(0.92); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+/* Animação de pulsação suave enquanto espera o JS carregar */
+@keyframes pulseLoading {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* Bloqueia o scroll enquanto o splash está ativo */
+body:has(#splash-screen) {
+    overflow: hidden;
 }

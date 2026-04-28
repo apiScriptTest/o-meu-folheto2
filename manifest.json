@@ -1,15 +1,17 @@
 {
-  "name": "O Meu Folheto",
-  "short_name": "Folheto",
+  "name": "A minha Lista",
+  "short_name": "A minha Lista",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f4f7f6",
+  "background_color": "#ffffff",
   "theme_color": "#2ecc71",
+  "description": "A tua lista de compras virtual",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081840.png",
+      "src": "img/appLogo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ]
 }
