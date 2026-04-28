@@ -1,4 +1,4 @@
-const cacheName = 'folheto-v2.2'; // Incrementa isto sempre
+const cacheName = 'folheto-v2.3'; // Incrementa isto sempre
 const assets = ['./', './index.html', './style-vs.css', './app-v2.js', './manifest.json'];
 
 // Instalação e Cache
@@ -22,7 +22,18 @@ self.addEventListener('activate', e => {
 
 // Estratégia: Tenta Rede, se falhar vai à Cache
 self.addEventListener('fetch', e => {
+    // Se for o ficheiro HTML principal, tenta SEMPRE a rede primeiro
+    if (e.request.mode === 'navigate') {
+        e.respondWith(
+            fetch(e.request).catch(() => caches.match(e.request))
+        );
+        return;
+    }
+
+    // Para os restantes ficheiros (CSS, JS, Imagens), usa a cache para ser rápido
     e.respondWith(
-        fetch(e.request).catch(() => caches.match(e.request))
+        caches.match(e.request).then(response => {
+            return response || fetch(e.request);
+        })
     );
 });

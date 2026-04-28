@@ -159,13 +159,14 @@ function toggleInput(loja) {
 // --- REGISTO DO SERVICE WORKER COM AUTO-REFRESH ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        // O "?v=2.2" força o GitHub a enviar o ficheiro novo e não o da cache
+        navigator.serviceWorker.register('./sw.js?v=2.3') 
             .then(reg => {
                 reg.onupdatefound = () => {
                     const worker = reg.installing;
                     worker.onstatechange = () => {
                         if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // Detetou nova versão -> Atualiza a página
+                            console.log('Nova versão instalada! A recarregar...');
                             window.location.reload();
                         }
                     };
