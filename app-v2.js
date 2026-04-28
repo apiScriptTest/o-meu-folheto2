@@ -4,26 +4,25 @@ let idParaApagar = null;
 let lojaAlvo = null;
 let acaoPendente = null;
 
-// 1. Base de Dados de Ícones (Sistema de Palavras-Chave Inteligente)
-const ICONES_CHAVES = {
-    "ucal": "🍫", "chocolate": "🍫", "nesquik": "🥣", "detergente": "🧼", "fairy": "🧼",
-    "cenoura": "🥕", "batata": "🥔", "calca": "👖", "calça": "👖", "alho": "🧄",
-    "acucar": "🍬", "açúcar": "🍬", "banana": "🍌", "feijao": "🫘", "feijão": "🫘",
-    "lixivia": "🧴", "lixívia": "🧴", "kiwi": "🥝", "leite": "🥛", "pao": "🍞", "pão": "🍞",
-    "ovo": "🥚", "cafe": "☕", "café": "☕", "arroz": "🍚", "massa": "🍝",
-    "fruta": "🍎", "carne": "🥩", "peixe": "🐟", "cerveja": "🍺", "vinho": "🍷",
-    "agua": "💧", "água": "💧", "papel": "🧻", "iogurte": "🍦", "queijo": "🧀",
-    "shampoo": "🧴", "dentes": "🪥", "manteiga": "🧈", "azeite": "🫗", "frango": "🍗"
+// 1. Base de Dados de Ícones (Expandida)
+const ICONES_PRODUTOS = {
+    "ucal": "🍫", "fairy": "🧼", "nesquik": "🥣", "detergente": "🧼", 
+    "cenoura": "🥕", "batata": "🥔", "calca": "👖", "alho": "🧄", 
+    "acucar": "🍬", "açúcar": "🍬", "banana": "🍌", "feijao": "🫘", 
+    "lixivia": "🧴", "kiwi": "🥝", "leite": "🥛", "pao": "🍞", 
+    "pão": "🍞", "ovo": "🥚", "cafe": "☕", "café": "☕", "arroz": "🍚", 
+    "massa": "🍝", "fruta": "🍎", "carne": "🥩", "peixe": "🐟",
+    "cerveja": "🍺", "vinho": "🍷", "agua": "💧", "água": "💧", 
+    "papel": "🧻", "iogurte": "🍦", "queijo": "🧀"
 };
 
-// 2. Lista de Sugestões Base (v3.2)
+// 2. Lista de Sugestões (Realista v3.1)
 const PRODUTOS_COMUNS = [
     "Ucal", "Pastilhas Fairy", "Nesquik", "Detergente", "Cenouras", 
     "Batatas", "Calças", "Alho francês", "Açúcar", "Bananas", 
     "Feijão frade", "Detergente roupa", "Lixívia", "Kiwi",
     "Leite", "Pão", "Ovos", "Arroz", "Massa", "Café", "Azeite", 
-    "Fruta", "Iogurtes", "Papel Higiénico", "Carne", "Peixe", "Cebolas",
-    "Shampoo", "Pasta de dentes", "Frango", "Manteiga"
+    "Fruta", "Iogurtes", "Papel Higiénico", "Carne", "Peixe", "Cebolas"
 ];
 
 const lojasConfig = [
@@ -43,8 +42,7 @@ function normalizarTexto(texto) {
 
 function obterIcone(texto) {
     const palavra = normalizarTexto(texto);
-    // Busca inteligente: verifica se alguma chave está contida no nome do item
-    for (const [chave, icone] of Object.entries(ICONES_CHAVES)) {
+    for (const [chave, icone] of Object.entries(ICONES_PRODUTOS)) {
         if (palavra.includes(normalizarTexto(chave))) return icone;
     }
     return "🛒";
@@ -52,7 +50,6 @@ function obterIcone(texto) {
 
 function mostrarToast(mensagem) {
     const container = document.getElementById('toast-container');
-    if(!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
@@ -64,8 +61,6 @@ function mostrarToast(mensagem) {
 
 function init() {
     folhetoConteudo.innerHTML = "";
-    
-    // 1. Gerar as secções das lojas
     lojasConfig.forEach(loja => {
         const section = document.createElement('section');
         section.className = 'loja-section';
@@ -81,9 +76,9 @@ function init() {
                     <button class="add-mini-btn" onclick="toggleInput('${loja.nome}')"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-            <div class="input-container" id="container-${loja.nome}" style="display:none;">
+            <div class="input-container" id="container-${loja.nome}" style="display:none; position:relative;">
                 <input type="text" id="input-${loja.nome}" placeholder="O que falta?" oninput="mostrarSugestoes('${loja.nome}')">
-                <div id="sugestoes-${loja.nome}" class="datalist-sugestoes"></div> 
+                <div id="sugestoes-${loja.nome}" class="datalist-sugestoes"></div>
                 <button class="ok-btn" onclick="adicionarItem('${loja.nome}')">OK</button>
             </div>
             <ul id="lista-${loja.nome}"></ul>
@@ -91,18 +86,6 @@ function init() {
         folhetoConteudo.appendChild(section);
         carregarItens(loja.nome);
     });
-
-    // 2. Lógica para remover o Splash Screen
-    const splash = document.getElementById('splash-screen');
-    if (splash) {
-        setTimeout(() => {
-            splash.style.opacity = '0';
-            // Remove do ecrã depois da animação de fade (0.6s)
-            setTimeout(() => {
-                splash.remove();
-            }, 600);
-        }, 1500); // Exibe a imagem por 1.5 segundos
-    }
 }
 
 function mostrarSugestoes(loja) {
@@ -115,14 +98,10 @@ function mostrarSugestoes(loja) {
         return; 
     }
 
-    // Auto-Aprendizagem: Junta itens base com itens que a mãe já escreveu antes
-    const personalizadas = JSON.parse(localStorage.getItem('sugestoes_extra')) || [];
-    const todasSugestoes = [...new Set([...PRODUTOS_COMUNS, ...personalizadas])];
-
-    // Filtra apenas se começar pela letra (startsWith) e ignora acentos
-    const filtrados = todasSugestoes
-    .filter(p => normalizarTexto(p).startsWith(busca))
-    .slice(0, 6); 
+    // Agora usa startsWith para filtrar apenas pela inicial
+    const filtrados = PRODUTOS_COMUNS.filter(p => 
+        normalizarTexto(p).startsWith(busca)
+    );
 
     divSugestoes.innerHTML = filtrados.map(p => `
         <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
@@ -132,17 +111,8 @@ function mostrarSugestoes(loja) {
 
 function adicionarItem(loja, textoManual = null) {
     const input = document.getElementById(`input-${loja}`);
-    const texto = (textoManual || input.value).trim();
+    const texto = textoManual || input.value.trim();
     if (!texto) return;
-
-    // Aprendizagem: Guarda o novo item se ele não existir nas sugestões
-    if (!PRODUTOS_COMUNS.some(p => p.toLowerCase() === texto.toLowerCase())) {
-        let extra = JSON.parse(localStorage.getItem('sugestoes_extra')) || [];
-        if (!extra.some(e => e.toLowerCase() === texto.toLowerCase())) {
-            extra.push(texto);
-            localStorage.setItem('sugestoes_extra', JSON.stringify(extra));
-        }
-    }
 
     const item = { id: Date.now() + Math.random(), texto, comprado: false };
     let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
@@ -180,11 +150,12 @@ function carregarItens(loja) {
 }
 
 function toggleItem(loja, id) {
-    const li = document.getElementById(`li-${id}`);
-    if(!li) return;
+    const li = document.getElementById(`li-${id}`); // Precisamos que os LIs tenham ID
     
+    // 1. Adiciona a classe de animação de saída
     li.classList.add('item-saindo');
 
+    // 2. Espera a animação acabar (400ms) para reordenar
     setTimeout(() => {
         let itens = JSON.parse(localStorage.getItem(`compras_${loja}`));
         const index = itens.findIndex(i => i.id === id);
@@ -192,8 +163,10 @@ function toggleItem(loja, id) {
         itens[index].comprado = !itens[index].comprado;
         localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
 
+        // 3. Recarrega a lista já com a nova ordem
         carregarItens(loja);
         
+        // 4. Opcional: Adiciona classe de entrada no novo item para efeito visual
         const novoLi = document.getElementById(`li-${id}`);
         if(novoLi) novoLi.classList.add('item-entrando');
     }, 400);
@@ -305,7 +278,7 @@ function toggleInput(loja) {
 // Service Worker
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`./sw.js?v=3.2`).then(reg => {
+        navigator.serviceWorker.register(`./sw.js?v=3.1`).then(reg => {
             reg.update();
         });
     });

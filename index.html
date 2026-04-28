@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>A minha Lista</title>
+    <title>O Meu Folheto</title>
     <script>
-        const VERSAO_ATUAL = '3.2'; 
+        const VERSAO_ATUAL = '2.9'; // Subimos para v2.9
         if (localStorage.getItem('app_version') !== VERSAO_ATUAL) {
             navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
             caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
@@ -13,30 +13,21 @@
             console.log('Cache limpa para v' + VERSAO_ATUAL);
         }
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.2/css/all.min.css">
-    <link rel="stylesheet" href="style-v2.css?v=3.2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style-v2.css?v=2.9">
     <link rel="manifest" href="manifest.json">
-    
-    <link rel="apple-touch-icon" href="img/appLogo.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
-    <div id="splash-screen">
-        <img src="img/loading.png" alt="A carregar..." class="splash-full-image">
-    </div>
-
     <div class="app-container">
-        <header>
-            <h2><i class="fas fa-cart-shopping"></i> A minha Lista</h2>
-        </header>
+<header>
+    <h2><i class="fas fa-cart-shopping"></i> O Meu Folheto v2.9</h2>
+</header>
 
-        <div class="global-actions">
-            <button class="share-all-btn" onclick="partilharTudo()">
-                <i class="fas fa-share-nodes"></i> Partilhar todas as listas
-            </button>
-        </div>
-        
+<div class="global-actions">
+    <button class="share-all-btn" onclick="partilharTudo()">
+        <i class="fas fa-share-nodes"></i> Partilhar todas as listas
+    </button>
+</div>
         <div id="folheto-conteudo"></div>
     </div>
 
@@ -54,6 +45,6 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="app-v2.js?v=3.2"></script>
+    <script src="app-v2.js?v=2.9"></script>
 </body>
 </html>
