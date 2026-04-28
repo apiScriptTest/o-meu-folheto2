@@ -1,5 +1,5 @@
 const cacheName = 'folheto-v2.2'; // Incrementa isto sempre
-const assets = ['./', './index.html', './style.css', './app.js', './manifest.json'];
+const assets = ['./', './index.html', './style-vs.css', './app-v2.js', './manifest.json'];
 
 // Instalação e Cache
 self.addEventListener('install', e => {
