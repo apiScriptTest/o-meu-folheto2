@@ -366,6 +366,11 @@ function toggleInput(loja) {
     if (!el) return;
     const aAbrir = el.style.display === 'none';
     el.style.display = aAbrir ? 'flex' : 'none';
+
+    // Eleva/restaura o z-index da secção pai
+    const section = el.closest('.loja-section');
+    if (section) section.style.zIndex = aAbrir ? '100' : '';
+
     if (aAbrir) document.getElementById(`input-${loja}`).focus();
 }
 
@@ -391,7 +396,7 @@ function guardarItens(loja, itens) {
 
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.0.3').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=0.0.4').then(reg => {
             reg.update();
         }).catch(err => {
             console.warn('SW não registado:', err);

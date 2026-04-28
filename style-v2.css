@@ -132,6 +132,11 @@ header h2 {
     overflow: visible; /* Permite que as sugestões (absolute) saiam do card */
 }
 
+/* Garante que a secção activa fica por cima das outras */
+.loja-section:has(.input-container[style*="flex"]) {
+    z-index: 100;
+}
+
 .loja-header {
     padding: 15px 20px;
     display: flex;
