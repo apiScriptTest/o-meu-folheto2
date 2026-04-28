@@ -123,39 +123,55 @@ function init() {
     });
 
     // Fecha sugestões ao tocar fora (touchstart para mobile)
-    document.addEventListener('touchstart', (e) => {
-        if (!e.target.closest('.input-container')) {
-            document.querySelectorAll('.datalist-sugestoes')
-                    .forEach(d => d.innerHTML = '');
-        }
-    }, { passive: true });
+document.addEventListener('touchstart', (e) => {
+    if (!e.target.closest('.input-container') && !e.target.closest('#sugestoes-floating')) {
+        const f = document.getElementById('sugestoes-floating');
+        if (f) f.remove();
+    }
+}, { passive: true });
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.input-container')) {
-            document.querySelectorAll('.datalist-sugestoes')
-                    .forEach(d => d.innerHTML = '');
-        }
-    });
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.input-container') && !e.target.closest('#sugestoes-floating')) {
+        const f = document.getElementById('sugestoes-floating');
+        if (f) f.remove();
+    }
+});
 }
 
 function mostrarSugestoes(loja) {
+    // Remove sugestões anteriores
+    const anterior = document.getElementById('sugestoes-floating');
+    if (anterior) anterior.remove();
+
     const input = document.getElementById(`input-${loja}`);
-    const divSugestoes = document.getElementById(`sugestoes-${loja}`);
     const busca = normalizarTexto(input.value);
 
-    if (busca.length < 1) {
-        divSugestoes.innerHTML = "";
-        return;
-    }
+    if (busca.length < 1) return;
 
     const filtrados = PRODUTOS_COMUNS.filter(p =>
         normalizarTexto(p).startsWith(busca)
     );
+    if (filtrados.length === 0) return;
 
-    divSugestoes.innerHTML = filtrados.map(p => `
+    // Cria a div flutuante no body
+    const div = document.createElement('div');
+    div.id = 'sugestoes-floating';
+    div.className = 'datalist-sugestoes';
+
+    // Posiciona por baixo do input
+    const rect = input.getBoundingClientRect();
+    div.style.position   = 'fixed';
+    div.style.top        = `${rect.bottom + 4}px`;
+    div.style.left       = `${rect.left}px`;
+    div.style.width      = `${rect.width}px`;
+    div.style.zIndex     = '99999';
+
+    div.innerHTML = filtrados.map(p => `
         <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
             <span>${obterIcone(p)}</span> <span>${p}</span>
         </div>`).join('');
+
+    document.body.appendChild(div);
 }
 
 function adicionarItem(loja, textoManual = null) {
@@ -170,7 +186,8 @@ function adicionarItem(loja, textoManual = null) {
     guardarItens(loja, itens);
 
     input.value = "";
-    document.getElementById(`sugestoes-${loja}`).innerHTML = "";
+    const f = document.getElementById('sugestoes-floating');
+    if (f) f.remove();
     if (!textoManual) toggleInput(loja);
     carregarItens(loja);
     mostrarToast("Adicionado!");
@@ -396,7 +413,7 @@ function guardarItens(loja, itens) {
 
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.0.4').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=0.0.5').then(reg => {
             reg.update();
         }).catch(err => {
             console.warn('SW não registado:', err);
