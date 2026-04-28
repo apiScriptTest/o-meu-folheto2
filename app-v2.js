@@ -226,5 +226,22 @@ function toggleInput(loja) {
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // Verifica se há uma atualização no servidor
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed') {
+          if (navigator.serviceWorker.controller) {
+            // Se chegou aqui, há código novo! Forçamos o reload da página
+            console.log('Novo conteúdo disponível! A atualizar...');
+            window.location.reload();
+          }
+        }
+      };
+    };
+  });
+}
 
 init();
