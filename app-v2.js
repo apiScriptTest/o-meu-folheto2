@@ -87,29 +87,61 @@ function partilharLista(loja) {
 
 function verificarLinkPartilhado() {
     const urlParams = new URLSearchParams(window.location.search);
-    const lojaLink = urlParams.get('loja');
-    const itensLink = urlParams.get('itens');
+    const masterData = urlParams.get('master');
 
-    if (lojaLink && itensLink) {
-        const nomes = itensLink.split(',');
-        let itensAtuais = JSON.parse(localStorage.getItem(`compras_${lojaLink}`)) || [];
+    if (masterData) {
+        // Formato: LIDL:Pão,Leite|ALDI:Ovos
+        const blocosLoja = masterData.split('|');
 
-        nomes.forEach(nome => {
-            // Só adiciona se o item ainda não existir (para não duplicar)
-            if (!itensAtuais.some(i => i.texto.toLowerCase() === nome.toLowerCase())) {
-                itensAtuais.push({ id: Date.now() + Math.random(), texto: nome, comprado: false });
+        blocosLoja.forEach(bloco => {
+            const [lojaNome, itensTexto] = bloco.split(':');
+            if (lojaNome && itensTexto) {
+                const nomes = itensTexto.split(',');
+                let itensAtuais = JSON.parse(localStorage.getItem(`compras_${lojaNome}`)) || [];
+
+                nomes.forEach(nome => {
+                    if (!itensAtuais.some(i => i.texto.toLowerCase() === nome.toLowerCase())) {
+                        itensAtuais.push({ id: Date.now() + Math.random(), texto: nome, comprado: false });
+                    }
+                });
+                localStorage.setItem(`compras_${lojaNome}`, JSON.stringify(itensAtuais));
             }
         });
 
-        localStorage.setItem(`compras_${lojaLink}`, JSON.stringify(itensAtuais));
-        
-        // Limpar a URL para não ficar a carregar os mesmos itens sempre que fizer refresh
         window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // Recarregar a interface
         init();
-        alert(`Lista do ${lojaLink} atualizada!`);
+        mostrarToast("Todas as listas foram atualizadas!");
     }
+}
+
+function partilharTudo() {
+    let dadosParaEnvio = [];
+    let resumoTexto = "";
+
+    lojasConfig.forEach(loja => {
+        const itens = JSON.parse(localStorage.getItem(`compras_${loja.nome}`)) || [];
+        const pendentes = itens.filter(i => !i.comprado);
+        
+        if (pendentes.length > 0) {
+            const nomes = pendentes.map(i => i.texto).join(',');
+            dadosParaEnvio.push(`${loja.nome}:${nomes}`);
+            resumoTexto += `• *${loja.nome}* (${pendentes.length})\n`;
+        }
+    });
+
+    if (dadosParaEnvio.length === 0) {
+        mostrarToast("Não há nada para partilhar!"); // Feedback caso esteja vazio
+        return;
+    }
+
+    const baseUrl = window.location.href.split('?')[0];
+    const linkMagico = `${baseUrl}?master=${encodeURIComponent(dadosParaEnvio.join('|'))}`;
+
+    let msg = `*📋 AS MINHAS LISTAS*\n\n${resumoTexto}\n🔗 *Importar:* ${linkMagico}`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    
+    mostrarToast("A abrir o WhatsApp..."); // Feedback de sucesso
 }
 
 function carregarItens(loja) {
@@ -212,6 +244,20 @@ if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
             };
         });
     });
+}
+
+function mostrarToast(mensagem) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
+    
+    container.appendChild(toast);
+
+    // Remove do HTML depois da animação acabar
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
 init();

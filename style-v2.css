@@ -3,7 +3,7 @@ body { background-color: #f4f7f6; display: flex; justify-content: center; }
 .app-container { width: 100%; max-width: 450px; padding: 15px; }
 
 header { text-align: center; padding: 20px 0; }
-header h2 { font-weight: 800; color: #2d3436; display: flex; justify-content: center; align-items: center; gap: 10px; }
+header h2 { font-weight: 800; color: #2d3436; display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;}
 
 .loja-section { background: white; border-radius: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid rgba(0,0,0,0.03); }
 .loja-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to right, #ffffff, #fafafa); border-bottom: 2px solid #f8f9fa; }
@@ -46,3 +46,74 @@ li { padding: 15px 20px; display: flex; align-items: center; justify-content: sp
 
 .datalist-sugestoes { position: absolute; background: white; width: calc(100% - 30px); max-height: 220px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 100; top: 65px; border: 1px solid #dfe6e9; }
 .sugestao-item { padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-size: 16px; border-bottom: 1px solid #f1f3f5; }
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: auto;
+    min-width: 200px;
+}
+
+.toast {
+    background: #2d3436;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 50px; /* Estilo pílula */
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out, fadeOut 0.3s ease-in 2.5s forwards;
+}
+
+.toast i { color: #2ecc71; } /* Ícone verde de sucesso */
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(-10px); }
+}
+
+.share-all-btn {
+    background: linear-gradient(135deg, #0984e3, #00cec9);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 50px; /* Estilo pílula moderno */
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(9, 132, 227, 0.2);
+    transition: all 0.2s ease;
+    width: 100%; /* Ocupa a largura disponível */
+    max-width: 300px;
+    justify-content: center;
+}
+
+.share-all-btn i {
+    font-size: 18px;
+}
+
+.share-all-btn:active {
+    transform: scale(0.96);
+    box-shadow: 0 2px 8px rgba(9, 132, 227, 0.4);
+}
+
+.global-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 0 5px;
+}
