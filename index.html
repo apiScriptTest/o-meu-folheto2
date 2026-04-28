@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O Meu Folheto</title>
+    <title>A minha Lista</title>
     <script>
-        const VERSAO_ATUAL = '0.0.1'; // Subimos para v0.0.1
+        const VERSAO_ATUAL = '0.0.3'; // Subimos para v0.0.3
         if (localStorage.getItem('app_version') !== VERSAO_ATUAL) {
             navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
             caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
@@ -14,13 +14,13 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style-v2.css?v=0.0.1">
+    <link rel="stylesheet" href="style-v2.css?v=0.0.3">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div class="app-container">
 <header>
-    <h2><i class="fas fa-cart-shopping"></i> O Meu Folheto v0.0.1</h2>
+    <h2><i class="fas fa-cart-shopping"></i> A minha Lista</h2>
 </header>
 
 <div class="global-actions">
@@ -45,6 +45,6 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="app-v2.js?v=0.0.1"></script>
+    <script src="app-v2.js?v=0.0.3"></script>
 </body>
 </html>
