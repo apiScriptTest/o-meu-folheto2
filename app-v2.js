@@ -70,12 +70,46 @@ function partilharLista(loja) {
         return;
     }
 
-    let msg = `*🛒 LISTA ${loja.toUpperCase()}*\n\n`;
-    pendentes.forEach((item, idx) => {
-        msg += `${idx + 1}. ${obterIcone(item.texto)} ${item.texto}\n`;
-    });
+    // Criar a lista de nomes separada por vírgulas
+    const nomesItens = pendentes.map(i => i.texto).join(',');
+    
+    // Gerar o Link Mágico (usa a URL atual da página)
+    const baseUrl = window.location.href.split('?')[0];
+    const linkMagico = `${baseUrl}?loja=${encodeURIComponent(loja)}&itens=${encodeURIComponent(nomesItens)}`;
+
+    // Mensagem bonita para o WhatsApp
+    let msg = `*🛒 LISTA DO ${loja.toUpperCase()}*\n`;
+    msg += `Clica no link para adicionar à tua app:\n\n`;
+    msg += `${linkMagico}`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function verificarLinkPartilhado() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lojaLink = urlParams.get('loja');
+    const itensLink = urlParams.get('itens');
+
+    if (lojaLink && itensLink) {
+        const nomes = itensLink.split(',');
+        let itensAtuais = JSON.parse(localStorage.getItem(`compras_${lojaLink}`)) || [];
+
+        nomes.forEach(nome => {
+            // Só adiciona se o item ainda não existir (para não duplicar)
+            if (!itensAtuais.some(i => i.texto.toLowerCase() === nome.toLowerCase())) {
+                itensAtuais.push({ id: Date.now() + Math.random(), texto: nome, comprado: false });
+            }
+        });
+
+        localStorage.setItem(`compras_${lojaLink}`, JSON.stringify(itensAtuais));
+        
+        // Limpar a URL para não ficar a carregar os mesmos itens sempre que fizer refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Recarregar a interface
+        init();
+        alert(`Lista do ${lojaLink} atualizada!`);
+    }
 }
 
 function carregarItens(loja) {
@@ -166,7 +200,7 @@ function toggleInput(loja) {
 
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`./sw.js?v=2.7`).then(reg => {
+        navigator.serviceWorker.register(`./sw.js?v=2.8`).then(reg => {
             reg.update();
             reg.onupdatefound = () => {
                 const worker = reg.installing;
@@ -181,3 +215,4 @@ if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
 }
 
 init();
+verificarLinkPartilhado();

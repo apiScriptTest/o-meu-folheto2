@@ -1,10 +1,10 @@
-const cacheName = 'folheto-v2.7';
+const cacheName = 'folheto-v2.8';
 const assets = [
-  './?v=2.7',
-  './index.html?v=2.7',
-  './style-v2.css?v=2.7',
-  './app-v2.js?v=2.7',
-  './manifest.json?v=2.7'
+  './',
+  './index.html',
+  './style-v2.css',
+  './app-v2.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {
@@ -20,9 +20,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-    if (e.request.mode === 'navigate') {
-        e.respondWith(fetch(e.request).catch(() => caches.match('./index.html?v=2.7')));
-        return;
+    // IMPORTANTE: Se houver parâmetros na URL (como ?loja=), 
+    // ignoramos a cache e vamos à rede para garantir que o JS lê os dados novos
+    const url = new URL(e.request.url);
+    if (url.search.length > 0) {
+        return e.respondWith(fetch(e.request));
     }
-    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+
+    e.respondWith(
+        caches.match(e.request).then(res => res || fetch(e.request))
+    );
 });
