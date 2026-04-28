@@ -5,42 +5,22 @@ let lojaAlvo = null;
 let acaoPendente = null;
 
 const ICONES_PRODUTOS = {
-    "leite": "🥛",
-    "pao": "🍞",
-    "pão": "🍞",
-    "ovo": "🥚",
-    "ovos": "🥚",
-    "cafe": "☕",
-    "café": "☕",
-    "arroz": "🍚",
-    "massa": "🍝",
-    "fruta": "🍎",
-    "maca": "🍎",
-    "maçã": "🍎",
-    "banana": "🍌",
-    "carne": "🥩",
-    "peixe": "🐟",
-    "cerveja": "🍺",
-    "vinho": "🍷",
-    "agua": "💧",
-    "água": "💧",
-    "papel": "🧻",
-    "detergente": "🧼",
-    "batata": "🥔",
-    "batatas": "🥔",
-    "cebola": "🧅",
-    "iogurte": "🍦",
-    "queijo": "🧀"
+    "leite": "🥛", "pao": "🍞", "pão": "🍞", "ovo": "🥚", "ovos": "🥚",
+    "cafe": "☕", "café": "☕", "arroz": "🍚", "massa": "🍝", "fruta": "🍎",
+    "maca": "🍎", "maçã": "🍎", "banana": "🍌", "carne": "🥩", "peixe": "🐟",
+    "cerveja": "🍺", "vinho": "🍷", "agua": "💧", "água": "💧", "papel": "🧻",
+    "detergente": "🧼", "batata": "🥔", "batatas": "🥔", "cebola": "🧅",
+    "iogurte": "🍦", "queijo": "🧀"
 };
 
 function obterIcone(texto) {
     const palavra = texto.toLowerCase().trim();
-    // Procura se alguma palavra das chaves está contida no texto
     for (const [chave, icone] of Object.entries(ICONES_PRODUTOS)) {
         if (palavra.includes(chave)) return icone;
     }
-    return "🛒"; // Ícone padrão se não encontrar correspondência
+    return "🛒";
 }
+
 const PRODUTOS_COMUNS = ["Leite", "Pão", "Ovos", "Arroz", "Massa", "Café", "Azeite", "Fruta", "Iogurtes", "Papel Higiénico", "Detergente", "Carne", "Peixe", "Batatas", "Cebolas"];
 
 const lojasConfig = [
@@ -83,10 +63,7 @@ function renderizarItem(loja, item) {
     const li = document.createElement('li');
     li.id = `li-${item.id}`;
     if(item.comprado) li.className = 'comprado';
-
-    // Obtemos o ícone com base no texto
     const icone = obterIcone(item.texto);
-
     li.innerHTML = `
         <span class="item-texto" onclick="toggleItem('${loja}', ${item.id})">
             <span class="emoji-icon">${icone}</span> ${item.texto}
@@ -103,55 +80,35 @@ function toggleItem(loja, id) {
     const index = itens.findIndex(i => i.id === id);
     itens[index].comprado = !itens[index].comprado;
     localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-    
     const el = document.getElementById(`li-${id}`);
     el.classList.toggle('comprado');
-
-    // REORDENAÇÃO SUAVE: Adiciona classe de movimento, espera a animação de riscar, e atualiza
     el.style.opacity = "0.3";
     el.style.transform = "translateX(10px)";
-    
-    setTimeout(() => {
-        carregarItens(loja);
-    }, 500); // Meio segundo para o olho humano acompanhar
+    setTimeout(() => carregarItens(loja), 500);
 }
 
 function abrirModalApagar(id, loja) {
-    idParaApagar = id;
-    lojaAlvo = loja;
-    acaoPendente = 'APAGAR_UM';
-    // Seleção segura dos elementos da modal
-    const titulo = modal.querySelector('h3');
-    const paragrafo = modal.querySelector('p');
-    
-    if(titulo) titulo.innerText = "Apagar item?";
-    if(paragrafo) paragrafo.innerText = "Queres remover este produto?";
-    
+    idParaApagar = id; lojaAlvo = loja; acaoPendente = 'APAGAR_UM';
+    modal.querySelector('h3').innerText = "Apagar item?";
+    modal.querySelector('p').innerText = "Queres remover este produto?";
     modal.style.display = "flex";
 }
 
 function abrirModalLimpeza(loja) {
-    lojaAlvo = loja;
-    acaoPendente = 'LIMPAR_FEITOS';
-    const titulo = modal.querySelector('h3');
-    const paragrafo = modal.querySelector('p');
-    
-    if(titulo) titulo.innerText = "Limpar feitos?";
-    if(paragrafo) paragrafo.innerText = "Apagar todos os itens riscados do " + loja + "?";
-    
+    lojaAlvo = loja; acaoPendente = 'LIMPAR_FEITOS';
+    modal.querySelector('h3').innerText = "Limpar feitos?";
+    modal.querySelector('p').innerText = "Apagar todos os itens riscados do " + loja + "?";
     modal.style.display = "flex";
 }
 
 function confirmarAcao() {
+    let itens = JSON.parse(localStorage.getItem(`compras_${lojaAlvo}`)) || [];
     if (acaoPendente === 'APAGAR_UM') {
-        let itens = JSON.parse(localStorage.getItem(`compras_${lojaAlvo}`));
         itens = itens.filter(i => i.id !== idParaApagar);
-        localStorage.setItem(`compras_${lojaAlvo}`, JSON.stringify(itens));
     } else {
-        let itens = JSON.parse(localStorage.getItem(`compras_${lojaAlvo}`)) || [];
         itens = itens.filter(i => !i.comprado);
-        localStorage.setItem(`compras_${lojaAlvo}`, JSON.stringify(itens));
     }
+    localStorage.setItem(`compras_${lojaAlvo}`, JSON.stringify(itens));
     carregarItens(lojaAlvo);
     fecharModal();
 }
@@ -168,56 +125,29 @@ function carregarItens(loja) {
 function adicionarItem(loja, textoManual = null) {
     const input = document.getElementById(`input-${loja}`);
     const texto = textoManual || input.value.trim();
-    
     if (!texto) return;
-
     const item = { id: Date.now(), texto, comprado: false };
     let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
     itens.push(item);
     localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-
-    // Limpeza e Fecho
     input.value = "";
     document.getElementById(`sugestoes-${loja}`).innerHTML = "";
-    
-    // ESCONDER O INPUT AUTOMATICAMENTE
     toggleInput(loja); 
-    
-    // Tirar o foco do input para o teclado do telemóvel baixar
     input.blur(); 
-
     carregarItens(loja);
 }
 
-// Melhoria na função de sugestões para incluir o emoji na sugestão
 function mostrarSugestoes(loja) {
     const input = document.getElementById(`input-${loja}`);
     const divSugestoes = document.getElementById(`sugestoes-${loja}`);
     const busca = input.value.toLowerCase().trim();
-    
-    if (busca.length < 1) {
-        divSugestoes.innerHTML = "";
-        return;
-    }
-
-    // CORREÇÃO: Usar startsWith para não aparecer "Cebolas" quando digitas "L"
-    const filtrados = PRODUTOS_COMUNS.filter(p => 
-        p.toLowerCase().startsWith(busca)
-    );
-    
-    if (filtrados.length === 0) {
-        divSugestoes.innerHTML = "";
-        return;
-    }
-
-    divSugestoes.innerHTML = filtrados.map(p => {
-        const icone = obterIcone(p);
-        return `
-            <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
-                <span>${icone}</span>
-                <span>${p}</span>
-            </div>`;
-    }).join('');
+    if (busca.length < 1) { divSugestoes.innerHTML = ""; return; }
+    const filtrados = PRODUTOS_COMUNS.filter(p => p.toLowerCase().startsWith(busca));
+    if (filtrados.length === 0) { divSugestoes.innerHTML = ""; return; }
+    divSugestoes.innerHTML = filtrados.map(p => `
+        <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
+            <span>${obterIcone(p)}</span> <span>${p}</span>
+        </div>`).join('');
 }
 
 function fecharModal() { modal.style.display = "none"; }
@@ -226,23 +156,21 @@ function toggleInput(loja) {
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
+// --- REGISTO DO SERVICE WORKER COM AUTO-REFRESH ---
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-        // Se houver uma atualização à espera, avisa a página
-        reg.onupdatefound = () => {
-            const installingWorker = reg.installing;
-            installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('Nova versão encontrada! A atualizar...');
-                    window.location.reload(); 
-                }
-            };
-        };
-    });
-
-    // Controla a página imediatamente após o novo SW ativar
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                reg.onupdatefound = () => {
+                    const worker = reg.installing;
+                    worker.onstatechange = () => {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Detetou nova versão -> Atualiza a página
+                            window.location.reload();
+                        }
+                    };
+                };
+            });
     });
 }
 
