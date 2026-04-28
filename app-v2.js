@@ -159,20 +159,20 @@ function toggleInput(loja) {
 // --- REGISTO DO SERVICE WORKER COM AUTO-REFRESH ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // O "?v=2.2" força o GitHub a enviar o ficheiro novo e não o da cache
-        navigator.serviceWorker.register('./sw.js?v=2.3') 
+        // O ?v=2.4 impede o GitHub de servir o ficheiro antigo guardado
+        navigator.serviceWorker.register('./sw.js?v=2.4')
             .then(reg => {
                 reg.onupdatefound = () => {
                     const worker = reg.installing;
                     worker.onstatechange = () => {
                         if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('Nova versão instalada! A recarregar...');
-                            window.location.reload();
+                            window.location.reload(); // Atualiza mal deteta v2.4
                         }
                     };
                 };
             });
     });
 }
+init();
 
 init();

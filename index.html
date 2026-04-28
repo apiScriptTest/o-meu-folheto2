@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>O Meu Folheto</title>
+    <!-- Script Anti-Cache (Deve ficar no topo) -->
+    <script>
+        const VERSAO_ATUAL = '2.4'; // MUDA ISTO para forçar o browser a limpar tudo
+        if (localStorage.getItem('app_version') !== VERSAO_ATUAL) {
+            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+            caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+            localStorage.setItem('app_version', VERSAO_ATUAL);
+            console.log('Cache limpa!');
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style-v2.css">
     <link rel="manifest" href="manifest.json">
@@ -11,23 +21,22 @@
 <body>
     <div class="app-container">
         <header>
-            <h2><i class="fas fa-cart-shopping"></i> O Meu Folheto v0.0.2</h2>
+            <h2><i class="fas fa-cart-shopping"></i> O Meu Folheto v2.3</h2>
         </header>
         <div id="folheto-conteudo"></div>
     </div>
 
-<div id="confirmModal" class="modal">
-    <div class="modal-content">
-        <i class="fas fa-trash-can warning-icon"></i>
-        <h3></h3>
-        <p>
-            
-        </p> <div class="modal-buttons">
-            <button class="btn-cancel" onclick="fecharModal()">Não</button>
-            <button class="btn-confirm" onclick="confirmarAcao()">Sim</button>
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-trash-can warning-icon"></i>
+            <h3></h3>
+            <p></p> 
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="fecharModal()">Não</button>
+                <button class="btn-confirm" onclick="confirmarAcao()">Sim</button>
+            </div>
         </div>
     </div>
-</div>
     <script src="app-v2.js"></script>
 </body>
 </html>
