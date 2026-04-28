@@ -11,56 +11,30 @@ header h2 { font-weight: 800; color: #2d3436; display: flex; justify-content: ce
 .loja-logo { width: 30px; height: 30px; object-fit: contain; }
 .loja-nome { font-weight: bold; font-size: 1.1rem; color: #2d3436; }
 
-.add-mini-btn { background: #2ecc71; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; }
+.loja-acoes { display: flex; gap: 12px; align-items: center; }
 
-.input-container {
-    padding: 15px;
-    background: #fff;
-    display: flex;
-    flex-direction: column; /* Elementos um por baixo do outro */
-    gap: 12px;
-    border-bottom: 1px solid #eee;
-}
+.share-btn { background: none; border: none; color: #0984e3; cursor: pointer; font-size: 18px; transition: 0.2s; }
+.share-btn:active { transform: scale(1.2); }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+.limpar-btn { background: none; border: none; color: #b2bec3; cursor: pointer; font-size: 16px; transition: 0.2s; }
+.limpar-btn:hover { color: #636e72; }
 
-.input-container input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; font-size: 16px; }
-.ok-btn {
-    background: #2d3436;
-    color: white;
-    border: none;
-    padding: 12px; /* Reduzi um pouco a altura para não ser massivo */
-    width: 100%;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+.add-mini-btn { background: #2ecc71; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-size: 16px; }
 
+.input-container { padding: 15px; background: #fff; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid #eee; }
+.input-container input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; font-size: 16px; }
+
+.ok-btn { background: #2d3436; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; }
 .ok-btn:active { background: #000; }
 
 ul { list-style: none; }
-li { padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f3f5; transition: opacity 0.4s ease, transform 0.4s ease; }
-.moving { opacity: 0.3; transform: scale(0.95); }
-
+li { padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f3f5; transition: 0.3s; }
+.comprado { background-color: #f8f9fa; opacity: 0.6; }
 .item-texto { font-size: 17px; color: #2d3436; font-weight: 500; cursor: pointer; flex: 1; position: relative; }
+.comprado .item-texto { color: #adb5bd; text-decoration: line-through; }
 
-/* Animação de Riscar */
-.comprado { background-color: #f8f9fa; }
-.comprado .item-texto { color: #adb5bd; }
-.comprado .item-texto::after {
-    content: ''; position: absolute; left: 0; top: 50%; width: 100%; height: 2px;
-    background: #ff7675; animation: strike 0.3s forwards;
-}
-
-@keyframes strike { from { width: 0; } to { width: 100%; } }
-
-.delete-btn { color: #ffcccc; background: none; border: none; font-size: 18px; padding: 5px 10px; cursor: pointer; transition: 0.2s; }
-.delete-btn:hover { color: #ff4d4d; }
+.emoji-icon { margin-right: 10px; font-size: 1.2rem; }
+.delete-btn { color: #ffcccc; background: none; border: none; font-size: 18px; padding: 5px 10px; cursor: pointer; }
 
 /* Modal */
 .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
@@ -70,60 +44,5 @@ li { padding: 15px 20px; display: flex; align-items: center; justify-content: sp
 .btn-cancel { background: #f1f3f5; flex: 1; padding: 12px; border-radius: 12px; border: none; }
 .warning-icon { font-size: 45px; color: #f1c40f; margin-bottom: 15px; }
 
-.loja-acoes {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.limpar-btn {
-    background: none;
-    border: none;
-    color: #b2bec3;
-    cursor: pointer;
-    font-size: 16px;
-    transition: color 0.2s;
-}
-
-.limpar-btn:hover { color: #636e72; }
-
-/* Estilo das Sugestões */
-.datalist-sugestoes {
-    position: absolute;
-    background: white;
-    width: calc(100% - 30px);
-    max-height: 220px;
-    overflow-y: auto;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    z-index: 100;
-    top: 65px;
-    border: 1px solid #dfe6e9; /* Cinza claro em vez de verde forte */
-}
-
-.sugestao-item {
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 16px;
-    border-bottom: 1px solid #f1f3f5;
-}
-
-.sugestao-item:last-child { border-bottom: none; }
-.sugestao-item:active { background: #e8f5e9; } /* Feedback visual ao clicar */
-
-/* Ajuste na Li para animação de reordenação */
-li { transition: transform 0.3s ease, background-color 0.3s; }
-
-.emoji-icon {
-    margin-right: 10px;
-    font-size: 1.2rem;
-    vertical-align: middle;
-}
-
-/* Quando comprado, o emoji também pode ficar mais opaco */
-.comprado .emoji-icon {
-    filter: grayscale(1);
-    opacity: 0.5;
-}
+.datalist-sugestoes { position: absolute; background: white; width: calc(100% - 30px); max-height: 220px; overflow-y: auto; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 100; top: 65px; border: 1px solid #dfe6e9; }
+.sugestao-item { padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-size: 16px; border-bottom: 1px solid #f1f3f5; }

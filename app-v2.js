@@ -44,6 +44,7 @@ function init() {
                     <span class="loja-nome">${loja.nome}</span>
                 </div>
                 <div class="loja-acoes">
+                    <button class="share-btn" onclick="partilharLista('${loja.nome}')"><i class="fas fa-paper-plane"></i></button>
                     <button class="limpar-btn" onclick="abrirModalLimpeza('${loja.nome}')"><i class="fas fa-broom"></i></button>
                     <button class="add-mini-btn" onclick="toggleInput('${loja.nome}')"><i class="fas fa-plus"></i></button>
                 </div>
@@ -60,21 +61,41 @@ function init() {
     });
 }
 
-function renderizarItem(loja, item) {
+function partilharLista(loja) {
+    const itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
+    const pendentes = itens.filter(i => !i.comprado);
+
+    if (pendentes.length === 0) {
+        alert("Não há itens para partilhar!");
+        return;
+    }
+
+    let msg = `*🛒 LISTA ${loja.toUpperCase()}*\n\n`;
+    pendentes.forEach((item, idx) => {
+        msg += `${idx + 1}. ${obterIcone(item.texto)} ${item.texto}\n`;
+    });
+    
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function carregarItens(loja) {
     const listaUl = document.getElementById(`lista-${loja}`);
-    const li = document.createElement('li');
-    li.id = `li-${item.id}`;
-    if(item.comprado) li.className = 'comprado';
-    const icone = obterIcone(item.texto);
-    li.innerHTML = `
-        <span class="item-texto" onclick="toggleItem('${loja}', ${item.id})">
-            <span class="emoji-icon">${icone}</span> ${item.texto}
-        </span>
-        <button class="delete-btn" onclick="abrirModalApagar(${item.id}, '${loja}')">
-            <i class="fas fa-xmark"></i>
-        </button>
-    `;
-    listaUl.appendChild(li);
+    if(!listaUl) return;
+    listaUl.innerHTML = "";
+    let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
+    itens.sort((a, b) => a.comprado - b.comprado);
+    itens.forEach(item => {
+        const li = document.createElement('li');
+        li.className = item.comprado ? 'comprado' : '';
+        li.id = `li-${item.id}`;
+        li.innerHTML = `
+            <span class="item-texto" onclick="toggleItem('${loja}', ${item.id})">
+                <span class="emoji-icon">${obterIcone(item.texto)}</span> ${item.texto}
+            </span>
+            <button class="delete-btn" onclick="abrirModalApagar(${item.id}, '${loja}')"><i class="fas fa-xmark"></i></button>
+        `;
+        listaUl.appendChild(li);
+    });
 }
 
 function toggleItem(loja, id) {
@@ -82,24 +103,20 @@ function toggleItem(loja, id) {
     const index = itens.findIndex(i => i.id === id);
     itens[index].comprado = !itens[index].comprado;
     localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-    const el = document.getElementById(`li-${id}`);
-    el.classList.toggle('comprado');
-    el.style.opacity = "0.3";
-    el.style.transform = "translateX(10px)";
-    setTimeout(() => carregarItens(loja), 500);
+    carregarItens(loja);
 }
 
 function abrirModalApagar(id, loja) {
     idParaApagar = id; lojaAlvo = loja; acaoPendente = 'APAGAR_UM';
     modal.querySelector('h3').innerText = "Apagar item?";
-    modal.querySelector('p').innerText = "Queres remover este produto?";
+    modal.querySelector('p').innerText = "Remover este produto?";
     modal.style.display = "flex";
 }
 
 function abrirModalLimpeza(loja) {
     lojaAlvo = loja; acaoPendente = 'LIMPAR_FEITOS';
     modal.querySelector('h3').innerText = "Limpar feitos?";
-    modal.querySelector('p').innerText = "Apagar todos os itens riscados do " + loja + "?";
+    modal.querySelector('p').innerText = `Apagar itens riscados no ${loja}?`;
     modal.style.display = "flex";
 }
 
@@ -115,15 +132,6 @@ function confirmarAcao() {
     fecharModal();
 }
 
-function carregarItens(loja) {
-    const listaUl = document.getElementById(`lista-${loja}`);
-    if(!listaUl) return;
-    listaUl.innerHTML = "";
-    let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
-    itens.sort((a, b) => a.comprado - b.comprado);
-    itens.forEach(item => renderizarItem(loja, item));
-}
-
 function adicionarItem(loja, textoManual = null) {
     const input = document.getElementById(`input-${loja}`);
     const texto = textoManual || input.value.trim();
@@ -134,8 +142,7 @@ function adicionarItem(loja, textoManual = null) {
     localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
     input.value = "";
     document.getElementById(`sugestoes-${loja}`).innerHTML = "";
-    toggleInput(loja); 
-    input.blur(); 
+    toggleInput(loja);
     carregarItens(loja);
 }
 
@@ -145,7 +152,6 @@ function mostrarSugestoes(loja) {
     const busca = input.value.toLowerCase().trim();
     if (busca.length < 1) { divSugestoes.innerHTML = ""; return; }
     const filtrados = PRODUTOS_COMUNS.filter(p => p.toLowerCase().startsWith(busca));
-    if (filtrados.length === 0) { divSugestoes.innerHTML = ""; return; }
     divSugestoes.innerHTML = filtrados.map(p => `
         <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
             <span>${obterIcone(p)}</span> <span>${p}</span>
@@ -158,41 +164,19 @@ function toggleInput(loja) {
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
-// --- REGISTO DO SERVICE WORKER (PROD ONLY + AUTO-UPDATE) ---
-if (
-    'serviceWorker' in navigator &&
-    location.protocol === 'https:' &&
-    !location.hostname.includes('localhost') &&
-    !location.hostname.includes('127.0.0.1')
-) {
+if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-
-        const SW_VERSION = '2.6'; // muda isto a cada deploy
-
-        navigator.serviceWorker.register(`./sw.js?v=${SW_VERSION}`)
-            .then(reg => {
-
-                // força procurar updates
-                reg.update();
-
-                reg.onupdatefound = () => {
-                    const worker = reg.installing;
-
-                    worker.onstatechange = () => {
-                        if (worker.state === 'installed') {
-
-                            // só faz reload se já houver SW ativo
-                            if (navigator.serviceWorker.controller) {
-                                console.log('Nova versão detetada → reload');
-                                window.location.reload();
-                            } else {
-                                console.log('SW instalado pela primeira vez');
-                            }
-                        }
-                    };
+        navigator.serviceWorker.register(`./sw.js?v=2.7`).then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+                const worker = reg.installing;
+                worker.onstatechange = () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        window.location.reload();
+                    }
                 };
-            })
-            .catch(err => console.log('SW erro:', err));
+            };
+        });
     });
 }
 
