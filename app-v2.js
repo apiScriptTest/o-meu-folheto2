@@ -175,5 +175,3 @@ if ('serviceWorker' in navigator) {
     });
 }
 init();
-
-init();

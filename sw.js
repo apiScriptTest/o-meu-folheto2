@@ -1,5 +1,11 @@
 const cacheName = 'folheto-v2.5'; // Muda para v2.5
-const assets = ['./', './index.html', './style-v2.css', './app-v2.js', './manifest.json'];
+const assets = [
+  './?v=2.5',
+  './index.html?v=2.5',
+  './style-v2.css?v=2.5',
+  './app-v2.js?v=2.5',
+  './manifest.json?v=2.5'
+];
 
 self.addEventListener('install', e => {
     self.skipWaiting();
@@ -17,8 +23,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-    // Tenta rede primeiro para garantir que apanha o index.html novo
+    if (e.request.mode === 'navigate') {
+        // Sempre buscar index.html da rede
+        e.respondWith(fetch(e.request));
+        return;
+    }
+
+    // Para os outros ficheiros: cache primeiro
     e.respondWith(
-        fetch(e.request).catch(() => caches.match(e.request))
+        caches.match(e.request).then(res => res || fetch(e.request))
     );
 });
