@@ -232,7 +232,7 @@ function toggleInput(loja) {
 
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`./sw.js?v=2.8`).then(reg => {
+        navigator.serviceWorker.register(`./sw.js?v=2.9`).then(reg => {
             reg.update();
             reg.onupdatefound = () => {
                 const worker = reg.installing;
