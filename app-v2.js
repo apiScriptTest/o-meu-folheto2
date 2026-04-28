@@ -28,7 +28,8 @@ const lojasConfig = [
     { nome: 'ALDI', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/ALDI_Nord_Logo_2015.png/120px-ALDI_Nord_Logo_2015.png' },
     { nome: 'Mercadona', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Logo_Mercadona_%28color-300-alpha%29.png/250px-Logo_Mercadona_%28color-300-alpha%29.png' },
     { nome: 'Continente', logo: 'https://images.seeklogo.com/logo-png/19/2/continente-hipermercados-logo-png_seeklogo-198420.png' },
-    { nome: 'Pingo Doce', logo: 'https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/PingoDoce.jpg/250px-PingoDoce.jpg' }
+    { nome: 'Pingo Doce', logo: 'https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/PingoDoce.jpg/250px-PingoDoce.jpg' },
+    { nome: 'Intermarché', logo: 'https://intermarche.pt/images/logo-app.png' }
 ];
 
 function init() {
@@ -157,21 +158,42 @@ function toggleInput(loja) {
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
-// --- REGISTO DO SERVICE WORKER COM AUTO-REFRESH ---
-if ('serviceWorker' in navigator) {
+// --- REGISTO DO SERVICE WORKER (PROD ONLY + AUTO-UPDATE) ---
+if (
+    'serviceWorker' in navigator &&
+    location.protocol === 'https:' &&
+    !location.hostname.includes('localhost') &&
+    !location.hostname.includes('127.0.0.1')
+) {
     window.addEventListener('load', () => {
-        // O ?v=2.5 impede o GitHub de servir o ficheiro antigo guardado
-        navigator.serviceWorker.register('./sw.js?v=2.5')
+
+        const SW_VERSION = '2.6'; // muda isto a cada deploy
+
+        navigator.serviceWorker.register(`./sw.js?v=${SW_VERSION}`)
             .then(reg => {
+
+                // força procurar updates
+                reg.update();
+
                 reg.onupdatefound = () => {
                     const worker = reg.installing;
+
                     worker.onstatechange = () => {
-                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            window.location.reload(); // Atualiza mal deteta v2.5
+                        if (worker.state === 'installed') {
+
+                            // só faz reload se já houver SW ativo
+                            if (navigator.serviceWorker.controller) {
+                                console.log('Nova versão detetada → reload');
+                                window.location.reload();
+                            } else {
+                                console.log('SW instalado pela primeira vez');
+                            }
                         }
                     };
                 };
-            });
+            })
+            .catch(err => console.log('SW erro:', err));
     });
 }
+
 init();
