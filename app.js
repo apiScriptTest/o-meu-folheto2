@@ -168,24 +168,56 @@ function carregarItens(loja) {
 function adicionarItem(loja, textoManual = null) {
     const input = document.getElementById(`input-${loja}`);
     const texto = textoManual || input.value.trim();
+    
     if (!texto) return;
+
     const item = { id: Date.now(), texto, comprado: false };
     let itens = JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
     itens.push(item);
     localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
+
+    // Limpeza e Fecho
     input.value = "";
     document.getElementById(`sugestoes-${loja}`).innerHTML = "";
+    
+    // ESCONDER O INPUT AUTOMATICAMENTE
+    toggleInput(loja); 
+    
+    // Tirar o foco do input para o teclado do telemóvel baixar
+    input.blur(); 
+
     carregarItens(loja);
-    if (!textoManual) toggleInput(loja);
 }
 
+// Melhoria na função de sugestões para incluir o emoji na sugestão
 function mostrarSugestoes(loja) {
     const input = document.getElementById(`input-${loja}`);
     const divSugestoes = document.getElementById(`sugestoes-${loja}`);
-    const busca = input.value.toLowerCase();
-    if (busca.length < 1) { divSugestoes.innerHTML = ""; return; }
-    const filtrados = PRODUTOS_COMUNS.filter(p => p.toLowerCase().startsWith(busca));
-    divSugestoes.innerHTML = filtrados.map(p => `<div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">${p}</div>`).join('');
+    const busca = input.value.toLowerCase().trim();
+    
+    if (busca.length < 1) {
+        divSugestoes.innerHTML = "";
+        return;
+    }
+
+    // CORREÇÃO: Usar startsWith para não aparecer "Cebolas" quando digitas "L"
+    const filtrados = PRODUTOS_COMUNS.filter(p => 
+        p.toLowerCase().startsWith(busca)
+    );
+    
+    if (filtrados.length === 0) {
+        divSugestoes.innerHTML = "";
+        return;
+    }
+
+    divSugestoes.innerHTML = filtrados.map(p => {
+        const icone = obterIcone(p);
+        return `
+            <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
+                <span>${icone}</span>
+                <span>${p}</span>
+            </div>`;
+    }).join('');
 }
 
 function fecharModal() { modal.style.display = "none"; }
@@ -194,10 +226,5 @@ function toggleInput(loja) {
     el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log('Service Worker Registado!'))
-    .catch(err => console.log('Erro ao registar SW:', err));
-}
 
 init();
