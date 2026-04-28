@@ -1,4 +1,4 @@
-const cacheName = 'folheto-v2.9';
+const cacheName = 'folheto-v0.0.1';
 const assets = [
   './',
   './index.html',

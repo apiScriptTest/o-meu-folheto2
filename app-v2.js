@@ -16,7 +16,7 @@ const ICONES_PRODUTOS = {
     "papel": "🧻", "iogurte": "🍦", "queijo": "🧀"
 };
 
-// 2. Lista de Sugestões (Realista v3.1)
+// 2. Lista de Sugestões (Realista v0.0.1)
 const PRODUTOS_COMUNS = [
     "Ucal", "Pastilhas Fairy", "Nesquik", "Detergente", "Cenouras", 
     "Batatas", "Calças", "Alho francês", "Açúcar", "Bananas", 
@@ -278,7 +278,7 @@ function toggleInput(loja) {
 // Service Worker
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(`./sw.js?v=3.1`).then(reg => {
+        navigator.serviceWorker.register(`./sw.js?v=0.0.1`).then(reg => {
             reg.update();
         });
     });
