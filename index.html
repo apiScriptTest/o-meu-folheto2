@@ -6,7 +6,7 @@
     <title>O Meu Folheto</title>
     <!-- Script Anti-Cache (Deve ficar no topo) -->
     <script>
-        const VERSAO_ATUAL = '2.4'; // MUDA ISTO para forçar o browser a limpar tudo
+        const VERSAO_ATUAL = '2.5'; // MUDA ISTO para forçar o browser a limpar tudo
         if (localStorage.getItem('app_version') !== VERSAO_ATUAL) {
             navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
             caches.keys().then(keys => keys.forEach(k => caches.delete(k)));

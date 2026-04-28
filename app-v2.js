@@ -27,7 +27,8 @@ const lojasConfig = [
     { nome: 'LIDL', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Lidl-Logo.svg' },
     { nome: 'ALDI', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/ALDI_Nord_Logo_2015.png/120px-ALDI_Nord_Logo_2015.png' },
     { nome: 'Mercadona', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Logo_Mercadona_%28color-300-alpha%29.png/250px-Logo_Mercadona_%28color-300-alpha%29.png' },
-    { nome: 'Continente', logo: 'https://images.seeklogo.com/logo-png/19/2/continente-hipermercados-logo-png_seeklogo-198420.png' }
+    { nome: 'Continente', logo: 'https://images.seeklogo.com/logo-png/19/2/continente-hipermercados-logo-png_seeklogo-198420.png' },
+    { nome: 'Pingo Doce', logo: 'https://upload.wikimedia.org/wikipedia/pt/thumb/3/37/PingoDoce.jpg/250px-PingoDoce.jpg' }
 ];
 
 function init() {
@@ -159,14 +160,14 @@ function toggleInput(loja) {
 // --- REGISTO DO SERVICE WORKER COM AUTO-REFRESH ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // O ?v=2.4 impede o GitHub de servir o ficheiro antigo guardado
-        navigator.serviceWorker.register('./sw.js?v=2.4')
+        // O ?v=2.5 impede o GitHub de servir o ficheiro antigo guardado
+        navigator.serviceWorker.register('./sw.js?v=2.5')
             .then(reg => {
                 reg.onupdatefound = () => {
                     const worker = reg.installing;
                     worker.onstatechange = () => {
                         if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            window.location.reload(); // Atualiza mal deteta v2.4
+                            window.location.reload(); // Atualiza mal deteta v2.5
                         }
                     };
                 };

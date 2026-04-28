@@ -1,4 +1,4 @@
-const cacheName = 'folheto-v2.4'; // Muda para v2.4
+const cacheName = 'folheto-v2.5'; // Muda para v2.5
 const assets = ['./', './index.html', './style-v2.css', './app-v2.js', './manifest.json'];
 
 self.addEventListener('install', e => {
