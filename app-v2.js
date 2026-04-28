@@ -227,21 +227,23 @@ function toggleInput(loja) {
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    // Verifica se há uma atualização no servidor
-    reg.onupdatefound = () => {
-      const installingWorker = reg.installing;
-      installingWorker.onstatechange = () => {
-        if (installingWorker.state === 'installed') {
-          if (navigator.serviceWorker.controller) {
-            // Se chegou aqui, há código novo! Forçamos o reload da página
-            console.log('Novo conteúdo disponível! A atualizar...');
-            window.location.reload();
-          }
-        }
-      };
-    };
-  });
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+        // Se houver uma atualização à espera, avisa a página
+        reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('Nova versão encontrada! A atualizar...');
+                    window.location.reload(); 
+                }
+            };
+        };
+    });
+
+    // Controla a página imediatamente após o novo SW ativar
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
 }
 
 init();
