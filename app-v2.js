@@ -1,41 +1,54 @@
 // ============================================
-//   A MINHA LISTA — app-v2.js
+//   A MINHA LISTA — app-v2.js v0.0.6
 // ============================================
 
-const folhetoConteudo = document.getElementById('folheto-conteudo');
 const modal = document.getElementById('confirmModal');
 let idParaApagar = null;
-let lojaAlvo = null;
+let lojaAlvo     = null;
 let acaoPendente = null;
+let lojaAtiva    = null;
+let modoCompras  = false; // Modo "estou às compras"
 
 // ============================================
-// 1. BASE DE DADOS DE ÍCONES
+// 1. PRODUTOS
 // ============================================
-const ICONES_PRODUTOS = {
-    "ucal": "🍫", "fairy": "🧼", "nesquik": "🥣", "detergente": "🧼",
-    "cenoura": "🥕", "batata": "🥔", "calca": "👖", "alho": "🧄",
-    "acucar": "🍬", "açúcar": "🍬", "banana": "🍌", "feijao": "🫘",
-    "lixivia": "🧴", "kiwi": "🥝", "leite": "🥛", "pao": "🍞",
-    "pão": "🍞", "ovo": "🥚", "cafe": "☕", "café": "☕", "arroz": "🍚",
-    "massa": "🍝", "fruta": "🍎", "carne": "🥩", "peixe": "🐟",
-    "cerveja": "🍺", "vinho": "🍷", "agua": "💧", "água": "💧",
-    "papel": "🧻", "iogurte": "🍦", "queijo": "🧀", "azeite": "🫒",
-    "cebola": "🧅", "tomate": "🍅"
-};
-
-// ============================================
-// 2. LISTA DE SUGESTÕES
-// ============================================
-const PRODUTOS_COMUNS = [
-    "Ucal", "Pastilhas Fairy", "Nesquik", "Detergente", "Cenouras",
-    "Batatas", "Calças", "Alho francês", "Açúcar", "Bananas",
-    "Feijão frade", "Detergente roupa", "Lixívia", "Kiwi",
-    "Leite", "Pão", "Ovos", "Arroz", "Massa", "Café", "Azeite",
-    "Fruta", "Iogurtes", "Papel Higiénico", "Carne", "Peixe", "Cebolas"
+const PRODUTOS = [
+    { texto: "Leite",             icone: "🥛" },
+    { texto: "Pão",               icone: "🍞" },
+    { texto: "Ovos",              icone: "🥚" },
+    { texto: "Café",              icone: "☕" },
+    { texto: "Arroz",             icone: "🍚" },
+    { texto: "Massa",             icone: "🍝" },
+    { texto: "Azeite",            icone: "🫒" },
+    { texto: "Açúcar",            icone: "🍬" },
+    { texto: "Cenouras",          icone: "🥕" },
+    { texto: "Batatas",           icone: "🥔" },
+    { texto: "Cebolas",           icone: "🧅" },
+    { texto: "Tomate",            icone: "🍅" },
+    { texto: "Alho francês",      icone: "🧄" },
+    { texto: "Bananas",           icone: "🍌" },
+    { texto: "Kiwi",              icone: "🥝" },
+    { texto: "Fruta",             icone: "🍎" },
+    { texto: "Carne",             icone: "🥩" },
+    { texto: "Peixe",             icone: "🐟" },
+    { texto: "Iogurtes",          icone: "🍦" },
+    { texto: "Queijo",            icone: "🧀" },
+    { texto: "Feijão frade",      icone: "🫘" },
+    { texto: "Cerveja",           icone: "🍺" },
+    { texto: "Vinho",             icone: "🍷" },
+    { texto: "Água",              icone: "💧" },
+    { texto: "Ucal",              icone: "🍫" },
+    { texto: "Nesquik",           icone: "🥣" },
+    { texto: "Pastilhas Fairy",   icone: "🧼" },
+    { texto: "Detergente",        icone: "🧼" },
+    { texto: "Detergente roupa",  icone: "🧼" },
+    { texto: "Lixívia",           icone: "🧴" },
+    { texto: "Papel Higiénico",   icone: "🧻" },
+    { texto: "Calças",            icone: "👖" },
 ];
 
 // ============================================
-// 3. CONFIGURAÇÃO DAS LOJAS
+// 2. LOJAS
 // ============================================
 const lojasConfig = [
     { nome: 'LIDL',        logo: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Lidl-Logo.svg' },
@@ -56,188 +69,373 @@ function normalizarTexto(texto) {
 
 function obterIcone(texto) {
     const palavra = normalizarTexto(texto);
-    for (const [chave, icone] of Object.entries(ICONES_PRODUTOS)) {
-        if (palavra.includes(normalizarTexto(chave))) return icone;
-    }
-    return "🛒";
+    const match   = PRODUTOS.find(p => palavra.includes(normalizarTexto(p.texto)));
+    return match ? match.icone : "🛒";
 }
 
-// Sanitiza strings externas — previne XSS
 function sanitizar(str) {
     return String(str).replace(/[<>"'`]/g, '');
 }
 
-// ID único como string — evita comparações float vs string
 function gerarId() {
     return Date.now() + '-' + Math.floor(Math.random() * 1000000);
 }
 
+function vibrar(ms = 30) {
+    if ('vibrate' in navigator) navigator.vibrate(ms);
+}
+
 function mostrarToast(mensagem) {
     const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
+    const toast     = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
 
+function obterItens(loja) {
+    try { return JSON.parse(localStorage.getItem(`compras_${loja}`)) || []; }
+    catch { return []; }
+}
+
+function guardarItens(loja, itens) {
+    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
+}
+
+function contarPendentes(loja) {
+    return obterItens(loja).filter(i => !i.comprado).length;
+}
+
 // ============================================
-// LÓGICA DE INTERFACE
+// ECRÃ 1 — GRADE
 // ============================================
 
-function init() {
-    folhetoConteudo.innerHTML = "";
+function mostrarGrade() {
+    lojaAtiva   = null;
+    modoCompras = false;
+    document.removeEventListener('touchstart', fecharSugestoesFora);
+    document.removeEventListener('click', fecharSugestoesFora);
+    esconderSugestoes();
 
-    lojasConfig.forEach(loja => {
+    document.getElementById('ecra-grade').style.display = 'flex';
+    document.getElementById('ecra-lista').style.display = 'none';
+    renderizarGrade();
+}
+
+function renderizarGrade() {
+    const grid = document.getElementById('grid-lojas');
+    grid.innerHTML = '';
+
+    lojasConfig.forEach((loja, index) => {
         const nomeDisplay = loja.nomeDisplay || loja.nome;
-        const section = document.createElement('section');
-        section.className = 'loja-section';
+        const pendentes   = contarPendentes(loja.nome);
 
-        section.innerHTML = `
-            <div class="loja-header">
-                <div class="loja-info">
-                    <img src="${loja.logo}" class="loja-logo" alt="${nomeDisplay}">
-                    <span class="loja-nome">${nomeDisplay}</span>
-                </div>
-                <div class="loja-acoes">
-                    <button class="share-btn" onclick="partilharLojaUnica('${loja.nome}')"><i class="fas fa-paper-plane"></i></button>
-                    <button class="limpar-btn" onclick="abrirModalLimpeza('${loja.nome}')"><i class="fas fa-broom"></i></button>
-                    <button class="add-mini-btn" onclick="toggleInput('${loja.nome}')"><i class="fas fa-plus"></i></button>
-                </div>
+        const card  = document.createElement('div');
+        card.className = 'loja-card';
+
+        const inner = document.createElement('div');
+        inner.className = 'loja-card-inner';
+        // Animação escalonada — cada card aparece com delay crescente
+        inner.style.animationDelay = `${index * 60}ms`;
+        inner.addEventListener('click', () => abrirLoja(loja.nome));
+
+        inner.innerHTML = `
+            <div class="loja-logo-wrap">
+                <div class="loja-logo-shimmer"></div>
+                <img src="${loja.logo}" alt="${nomeDisplay}" class="loja-card-logo"
+                     onload="this.previousElementSibling.style.display='none'; this.style.opacity='1'">
             </div>
-            <div class="input-container" id="container-${loja.nome}" style="display:none; position:relative;">
-                <input
-                    type="text"
-                    id="input-${loja.nome}"
-                    placeholder="O que falta?"
-                    oninput="mostrarSugestoes('${loja.nome}')"
-                    onkeydown="if(event.key==='Enter') adicionarItem('${loja.nome}')">
-                <div id="sugestoes-${loja.nome}" class="datalist-sugestoes"></div>
-                <button class="ok-btn" onclick="adicionarItem('${loja.nome}')">OK</button>
-            </div>
-            <ul id="lista-${loja.nome}"></ul>
+            <span class="loja-card-nome">${nomeDisplay}</span>
+            <span class="loja-card-badge ${pendentes === 0 ? 'badge-vazio' : ''}">
+                ${pendentes === 0 ? '✓' : pendentes}
+            </span>
         `;
 
-        folhetoConteudo.appendChild(section);
-        carregarItens(loja.nome);
+        card.appendChild(inner);
+        grid.appendChild(card);
     });
-
-    // Fecha sugestões ao tocar fora (touchstart para mobile)
-document.addEventListener('touchstart', (e) => {
-    if (!e.target.closest('.input-container') && !e.target.closest('#sugestoes-floating')) {
-        const f = document.getElementById('sugestoes-floating');
-        if (f) f.remove();
-    }
-}, { passive: true });
-
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.input-container') && !e.target.closest('#sugestoes-floating')) {
-        const f = document.getElementById('sugestoes-floating');
-        if (f) f.remove();
-    }
-});
 }
 
-function mostrarSugestoes(loja) {
-    // Remove sugestões anteriores
-    const anterior = document.getElementById('sugestoes-floating');
-    if (anterior) anterior.remove();
+// ============================================
+// ECRÃ 2 — LISTA
+// ============================================
 
-    const input = document.getElementById(`input-${loja}`);
+function abrirLoja(nomeLoja) {
+    lojaAtiva   = nomeLoja;
+    modoCompras = false;
+    const loja        = lojasConfig.find(l => l.nome === nomeLoja);
+    const nomeDisplay = loja?.nomeDisplay || nomeLoja;
+
+    document.getElementById('lista-loja-logo').src = loja?.logo || '';
+    document.getElementById('lista-loja-logo').alt = nomeDisplay;
+    document.getElementById('lista-loja-nome').textContent = nomeDisplay;
+
+    document.getElementById('ecra-grade').style.display = 'none';
+    document.getElementById('ecra-lista').style.display = 'flex';
+
+    // Garante que botão de modo compras começa no estado correcto
+    atualizarBotaoModoCompras();
+
+    document.getElementById('lista-input-container').style.display = 'none';
+    document.getElementById('lista-input').value = '';
+
+    carregarItens(nomeLoja);
+
+    document.addEventListener('touchstart', fecharSugestoesFora, { passive: true });
+    document.addEventListener('click', fecharSugestoesFora);
+}
+
+function voltarGrade() {
+    if (!lojaAtiva) { mostrarGrade(); return; }
+
+    const pendentes = contarPendentes(lojaAtiva);
+    if (pendentes > 0) {
+        lojaAlvo     = lojaAtiva;
+        acaoPendente = 'VOLTAR';
+        modal.querySelector('.warning-icon').className = 'fas fa-circle-exclamation warning-icon';
+        modal.querySelector('.warning-icon').style.color = 'var(--blue)';
+        modal.querySelector('.btn-confirm').style.background = 'var(--blue)';
+        modal.querySelector('h3').innerText = 'Sair da lista?';
+        modal.querySelector('p').innerText  = `Ainda tens ${pendentes} item(s) por comprar.`;
+        modal.querySelector('.btn-confirm').innerText = 'Sair';
+        modal.querySelector('.btn-cancel').innerText  = 'Ficar';
+        modal.style.display = 'flex';
+    } else {
+        mostrarGrade();
+    }
+}
+
+function fecharSugestoesFora(e) {
+    if (!e.target.closest('#lista-input-container') &&
+        !e.target.closest('#sugestoes-floating')) {
+        esconderSugestoes();
+    }
+}
+
+// ============================================
+// MODO COMPRAS
+// ============================================
+
+function toggleModoCompras() {
+    modoCompras = !modoCompras;
+    vibrar(20);
+    atualizarBotaoModoCompras();
+    carregarItens(lojaAtiva);
+
+    if (modoCompras) {
+        mostrarToast('Modo compras ativo 🛒');
+    }
+}
+
+function atualizarBotaoModoCompras() {
+    const btn = document.getElementById('btn-modo-compras');
+    if (!btn) return;
+
+    if (modoCompras) {
+        btn.classList.add('ativo');
+        btn.title = 'Mostrar todos';
+    } else {
+        btn.classList.remove('ativo');
+        btn.title = 'Modo compras';
+    }
+}
+
+// ============================================
+// SUGESTÕES
+// ============================================
+
+function mostrarSugestoes() {
+    const input = document.getElementById('lista-input');
     const busca = normalizarTexto(input.value);
 
-    if (busca.length < 1) return;
+    if (busca.length < 1) { esconderSugestoes(); return; }
 
-    const filtrados = PRODUTOS_COMUNS.filter(p =>
-        normalizarTexto(p).startsWith(busca)
+    const filtrados = PRODUTOS.filter(p =>
+        normalizarTexto(p.texto).startsWith(busca)
     );
-    if (filtrados.length === 0) return;
 
-    // Cria a div flutuante no body
-    const div = document.createElement('div');
-    div.id = 'sugestoes-floating';
-    div.className = 'datalist-sugestoes';
+    let div = document.getElementById('sugestoes-floating');
 
-    // Posiciona por baixo do input
+    if (filtrados.length === 0) { esconderSugestoes(); return; }
+
     const rect = input.getBoundingClientRect();
-    div.style.position   = 'fixed';
-    div.style.top        = `${rect.bottom + 4}px`;
-    div.style.left       = `${rect.left}px`;
-    div.style.width      = `${rect.width}px`;
-    div.style.zIndex     = '99999';
+
+    if (!div) {
+        div           = document.createElement('div');
+        div.id        = 'sugestoes-floating';
+        div.className = 'datalist-sugestoes';
+        div.style.cssText = `position:fixed;z-index:99999;`;
+        div.addEventListener('click', e => {
+            const item = e.target.closest('.sugestao-item');
+            if (item) adicionarItem(item.dataset.texto);
+        });
+        document.body.appendChild(div);
+    }
+
+    div.style.top   = `${rect.bottom + 6}px`;
+    div.style.left  = `${rect.left}px`;
+    div.style.width = `${rect.width}px`;
 
     div.innerHTML = filtrados.map(p => `
-        <div class="sugestao-item" onclick="adicionarItem('${loja}', '${p}')">
-            <span>${obterIcone(p)}</span> <span>${p}</span>
+        <div class="sugestao-item" data-texto="${p.texto}">
+            <span>${p.icone}</span><span>${p.texto}</span>
         </div>`).join('');
-
-    document.body.appendChild(div);
 }
 
-function adicionarItem(loja, textoManual = null) {
-    const input = document.getElementById(`input-${loja}`);
-    const texto = sanitizar(textoManual || input.value.trim());
-    if (!texto) return;
-
-    // FIX: ID gerado como string consistente
-    const item = { id: gerarId(), texto, comprado: false };
-    const itens = obterItens(loja);
-    itens.push(item);
-    guardarItens(loja, itens);
-
-    input.value = "";
+function esconderSugestoes() {
     const f = document.getElementById('sugestoes-floating');
     if (f) f.remove();
-    if (!textoManual) toggleInput(loja);
-    carregarItens(loja);
-    mostrarToast("Adicionado!");
+}
+
+// ============================================
+// CRUD
+// ============================================
+
+function adicionarItem(textoManual = null) {
+    const input = document.getElementById('lista-input');
+    const texto = sanitizar(textoManual || input.value.trim());
+    if (!texto || !lojaAtiva) return;
+
+    vibrar(25);
+
+    const item  = { id: gerarId(), texto, comprado: false };
+    const itens = obterItens(lojaAtiva);
+    itens.push(item);
+    guardarItens(lojaAtiva, itens);
+
+    input.value = '';
+    esconderSugestoes();
+    carregarItens(lojaAtiva);
+    atualizarBadge(lojaAtiva);
+    mostrarToast('Adicionado!');
 }
 
 function carregarItens(loja) {
-    const listaUl = document.getElementById(`lista-${loja}`);
+    const listaUl = document.getElementById('lista-itens');
     if (!listaUl) return;
-    listaUl.innerHTML = "";
+    listaUl.innerHTML = '';
 
-    const itens = obterItens(loja);
-    itens.sort((a, b) => Number(a.comprado) - Number(b.comprado));
+    let itens = obterItens(loja);
+    // No modo compras, esconde os comprados
+    if (modoCompras) {
+        itens = itens.filter(i => !i.comprado);
+    } else {
+        itens.sort((a, b) => Number(a.comprado) - Number(b.comprado));
+    }
 
-    itens.forEach(item => {
-        const li = document.createElement('li');
-        li.className = item.comprado ? 'comprado' : '';
-        li.id = `li-${item.id}`;
+    if (itens.length === 0) {
+        listaUl.innerHTML = `
+            <li class="lista-vazia">
+                <span>${modoCompras ? '🎉' : '🛒'}</span>
+                <span>${modoCompras ? 'Tudo comprado!' : 'Lista vazia — adiciona o primeiro item!'}</span>
+            </li>`;
+        // No modo compras, volta automaticamente ao normal após 2s para não ficar preso
+        if (modoCompras) {
+            setTimeout(() => {
+                mostrarToast('🎉 Tudo comprado!');
+            }, 100);
+        }
+        return;
+    }
 
-        // FIX: IDs passados como strings com aspas simples no onclick
-        li.innerHTML = `
-            <span class="item-texto" onclick="toggleItem('${loja}', '${item.id}')">
-                <span class="emoji-icon">${obterIcone(item.texto)}</span> ${item.texto}
-            </span>
-            <button class="delete-btn" onclick="abrirModalApagar('${item.id}', '${loja}')">
-                <i class="fas fa-xmark"></i>
-            </button>
-        `;
-        listaUl.appendChild(li);
-    });
+    // Separa pendentes e comprados (só se não estiver em modo compras)
+    const pendentes = itens.filter(i => !i.comprado);
+    const comprados = itens.filter(i => i.comprado);
+
+    pendentes.forEach(item => listaUl.appendChild(criarItemLi(item, loja)));
+
+    // Divisor visual entre pendentes e comprados
+    if (!modoCompras && comprados.length > 0 && pendentes.length > 0) {
+        const div = document.createElement('li');
+        div.className = 'lista-divisor';
+        div.innerHTML = `<span>Já comprado</span>`;
+        listaUl.appendChild(div);
+    }
+
+    comprados.forEach(item => listaUl.appendChild(criarItemLi(item, loja)));
+}
+
+function criarItemLi(item, loja) {
+    const li      = document.createElement('li');
+    li.className  = item.comprado ? 'comprado' : '';
+    li.id         = `li-${item.id}`;
+
+    li.innerHTML = `
+        <div class="item-emoji-wrap" onclick="toggleItem('${loja}', '${item.id}')">
+            ${obterIcone(item.texto)}
+        </div>
+        <span class="item-texto" onclick="toggleItem('${loja}', '${item.id}')">
+            ${item.texto}
+        </span>
+        <button class="delete-btn" onclick="abrirModalApagar('${item.id}', '${loja}')">
+            <i class="fas fa-xmark"></i>
+        </button>
+    `;
+
+    return li;
 }
 
 function toggleItem(loja, id) {
     const li = document.getElementById(`li-${id}`);
     if (!li) return;
 
-    li.classList.add('item-saindo');
+    vibrar(30);
+
+    li.style.transition = 'opacity .2s ease, transform .2s ease';
+    li.style.opacity    = '0';
+    li.style.transform  = 'translateX(12px)';
 
     setTimeout(() => {
         const itens = obterItens(loja);
-        // FIX: comparação string === string (antes era float === string, falhava)
-        const item = itens.find(i => String(i.id) === String(id));
+        const item  = itens.find(i => String(i.id) === String(id));
         if (!item) return;
 
         item.comprado = !item.comprado;
         guardarItens(loja, itens);
         carregarItens(loja);
+        atualizarBadge(loja);
 
         const novoLi = document.getElementById(`li-${id}`);
-        if (novoLi) novoLi.classList.add('item-entrando');
-    }, 400);
+        if (novoLi) {
+            novoLi.style.opacity   = '0';
+            novoLi.style.transform = 'translateY(-4px)';
+            novoLi.style.transition = 'opacity .25s ease, transform .25s ease';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                novoLi.style.opacity   = '1';
+                novoLi.style.transform = 'translateY(0)';
+            }));
+        }
+    }, 200);
+}
+
+function atualizarBadge(loja) {
+    const pendentes = contarPendentes(loja);
+    document.querySelectorAll('.loja-card-inner').forEach(inner => {
+        const nome   = inner.querySelector('.loja-card-nome')?.textContent;
+        const config = lojasConfig.find(l => (l.nomeDisplay || l.nome) === nome);
+        if (config && config.nome === loja) {
+            const badge       = inner.querySelector('.loja-card-badge');
+            if (!badge) return;
+            badge.textContent = pendentes === 0 ? '✓' : pendentes;
+            badge.className   = `loja-card-badge ${pendentes === 0 ? 'badge-vazio' : ''}`;
+        }
+    });
+}
+
+// ============================================
+// TOGGLE INPUT
+// ============================================
+
+function toggleInput() {
+    const container = document.getElementById('lista-input-container');
+    const aAbrir    = container.style.display === 'none' || container.style.display === '';
+    container.style.display = aAbrir ? 'flex' : 'none';
+    if (aAbrir) {
+        document.getElementById('lista-input').focus();
+    } else {
+        esconderSugestoes();
+    }
 }
 
 // ============================================
@@ -246,95 +444,69 @@ function toggleItem(loja, id) {
 
 function partilharTudo() {
     const blocos = [];
-    let resumoTexto = "";
+    let resumo   = '';
 
     lojasConfig.forEach(loja => {
         const pendentes = obterItens(loja.nome).filter(i => !i.comprado);
         if (pendentes.length > 0) {
-            const nomes = pendentes.map(i => i.texto).join(',');
-            blocos.push(`${loja.nome}:${nomes}`);
-            resumoTexto += `• *${loja.nomeDisplay || loja.nome}* (${pendentes.length})\n`;
+            blocos.push(`${loja.nome}:${pendentes.map(i => i.texto).join(',')}`);
+            resumo += `• *${loja.nomeDisplay || loja.nome}* (${pendentes.length})\n`;
         }
     });
 
-    if (blocos.length === 0) {
-        mostrarToast("Nada para partilhar!");
-        return;
-    }
+    if (blocos.length === 0) { mostrarToast('Nada para partilhar!'); return; }
 
-    const baseUrl    = window.location.href.split('?')[0];
-    const linkMagico = `${baseUrl}?master=${encodeURIComponent(blocos.join('|'))}`;
+    const base = window.location.href.split('?')[0];
+    const link = `${base}?master=${encodeURIComponent(blocos.join('|'))}`;
+    if (link.length > 1800) { mostrarToast('⚠️ Lista muito longa! Partilha por loja.'); return; }
 
-    if (linkMagico.length > 1800) {
-        mostrarToast("⚠️ Lista muito longa! Partilha por loja.");
-        return;
-    }
-
-    const msg = `*📋 AS MINHAS LISTAS*\n\n${resumoTexto}\n🔗 *Importar:* ${linkMagico}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-    mostrarToast("WhatsApp aberto!");
+    window.open(`https://wa.me/?text=${encodeURIComponent(`*📋 AS MINHAS LISTAS*\n\n${resumo}\n🔗 *Importar:* ${link}`)}`, '_blank');
+    mostrarToast('WhatsApp aberto!');
 }
 
-function partilharLojaUnica(loja) {
-    const pendentes = obterItens(loja).filter(i => !i.comprado);
-    if (pendentes.length === 0) {
-        mostrarToast("Lista vazia!");
-        return;
-    }
+function partilharLojaAtiva() {
+    if (!lojaAtiva) return;
+    const pendentes = obterItens(lojaAtiva).filter(i => !i.comprado);
+    if (pendentes.length === 0) { mostrarToast('Lista vazia!'); return; }
 
-    const nomes       = pendentes.map(i => i.texto).join(',');
-    const baseUrl     = window.location.href.split('?')[0];
-    const linkMagico  = `${baseUrl}?master=${encodeURIComponent(loja + ':' + nomes)}`;
-    const nomeDisplay = (lojasConfig.find(l => l.nome === loja) || {}).nomeDisplay || loja;
-    const msg         = `*🛒 LISTA ${nomeDisplay}*\n🔗 *Importar:* ${linkMagico}`;
+    const base  = window.location.href.split('?')[0];
+    const link  = `${base}?master=${encodeURIComponent(`${lojaAtiva}:${pendentes.map(i => i.texto).join(',')}`)}`;
+    const loja  = lojasConfig.find(l => l.nome === lojaAtiva);
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-    mostrarToast("WhatsApp aberto!");
+    window.open(`https://wa.me/?text=${encodeURIComponent(`*🛒 LISTA ${loja?.nomeDisplay || lojaAtiva}*\n🔗 *Importar:* ${link}`)}`, '_blank');
+    mostrarToast('WhatsApp aberto!');
 }
 
 function verificarLinkPartilhado() {
-    const urlParams  = new URLSearchParams(window.location.search);
-    const masterData = urlParams.get('master');
-    if (!masterData) return;
+    const params = new URLSearchParams(window.location.search);
+    const data   = params.get('master');
+    if (!data) return;
 
     let importados = 0;
 
-    masterData.split('|').forEach(bloco => {
-        // FIX: indexOf em vez de split(':') — não parte em ':' dentro do produto
-        const separador = bloco.indexOf(':');
-        if (separador === -1) return;
-
-        const lojaNome   = sanitizar(bloco.substring(0, separador).trim());
-        const itensTexto = bloco.substring(separador + 1).trim();
-        if (!lojaNome || !itensTexto) return;
-
-        // Só importa para lojas conhecidas
+    data.split('|').forEach(bloco => {
+        const sep      = bloco.indexOf(':');
+        if (sep === -1) return;
+        const lojaNome = sanitizar(bloco.substring(0, sep).trim());
+        const itensStr = bloco.substring(sep + 1).trim();
+        if (!lojaNome || !itensStr) return;
         if (!lojasConfig.some(l => l.nome === lojaNome)) return;
 
-        const nomes       = itensTexto.split(',').map(n => sanitizar(n.trim())).filter(Boolean);
+        const nomes       = itensStr.split(',').map(n => sanitizar(n.trim())).filter(Boolean);
         const itensAtuais = obterItens(lojaNome);
-
         nomes.forEach(nome => {
-            const jaExiste = itensAtuais.some(
-                i => normalizarTexto(i.texto) === normalizarTexto(nome)
-            );
-            if (!jaExiste) {
+            if (!itensAtuais.some(i => normalizarTexto(i.texto) === normalizarTexto(nome))) {
                 itensAtuais.push({ id: gerarId(), texto: nome, comprado: false });
                 importados++;
             }
         });
-
         guardarItens(lojaNome, itensAtuais);
     });
 
     window.history.replaceState({}, document.title, window.location.pathname);
-
-    if (importados > 0) {
-        init();
-        mostrarToast(`${importados} item(s) importado(s)!`);
-    } else {
-        mostrarToast("Sem itens novos para importar.");
-    }
+    mostrarGrade();
+    if (importados > 0) mostrarToast(`✅ ${importados} item(s) importado(s)!`);
+    else mostrarToast('Sem itens novos para importar.');
 }
 
 // ============================================
@@ -342,88 +514,129 @@ function verificarLinkPartilhado() {
 // ============================================
 
 function abrirModalApagar(id, loja) {
-    idParaApagar = id;
-    lojaAlvo     = loja;
-    acaoPendente = 'APAGAR_UM';
-    modal.querySelector('h3').innerText = "Apagar item?";
-    modal.querySelector('p').innerText  = "Remover este produto da lista?";
-    modal.style.display = "flex";
+    vibrar(15);
+    idParaApagar = id; lojaAlvo = loja; acaoPendente = 'APAGAR_UM';
+    modal.querySelector('h3').innerText = 'Apagar item?';
+    modal.querySelector('p').innerText  = 'Remover este produto da lista?';
+    modal.querySelector('.btn-confirm').innerText = 'Sim';
+    modal.querySelector('.btn-cancel').innerText  = 'Não';
+    modal.style.display = 'flex';
 }
 
-function abrirModalLimpeza(loja) {
-    lojaAlvo     = loja;
-    acaoPendente = 'LIMPAR_FEITOS';
-    modal.querySelector('h3').innerText = "Limpar concluídos?";
-    modal.querySelector('p').innerText  = `Apagar itens riscados no ${loja}?`;
-    modal.style.display = "flex";
+function abrirModalLimpeza() {
+    if (!lojaAtiva) return;
+    lojaAlvo = lojaAtiva; acaoPendente = 'LIMPAR_FEITOS';
+    modal.querySelector('h3').innerText = 'Limpar concluídos?';
+    modal.querySelector('p').innerText  = 'Apagar todos os itens riscados?';
+    modal.querySelector('.btn-confirm').innerText = 'Sim';
+    modal.querySelector('.btn-cancel').innerText  = 'Não';
+    modal.style.display = 'flex';
 }
 
 function confirmarAcao() {
-    let itens = obterItens(lojaAlvo);
-
-    if (acaoPendente === 'APAGAR_UM') {
-        // FIX: comparação com String() para garantir consistência
-        itens = itens.filter(i => String(i.id) !== String(idParaApagar));
-    } else {
-        itens = itens.filter(i => !i.comprado);
+    if (acaoPendente === 'VOLTAR') {
+        fecharModal();
+        mostrarGrade();
+        return;
     }
+
+    let itens = obterItens(lojaAlvo);
+    itens = acaoPendente === 'APAGAR_UM'
+        ? itens.filter(i => String(i.id) !== String(idParaApagar))
+        : itens.filter(i => !i.comprado);
 
     guardarItens(lojaAlvo, itens);
     carregarItens(lojaAlvo);
+    atualizarBadge(lojaAlvo);
     fecharModal();
-    mostrarToast("Concluído!");
+    mostrarToast('Concluído!');
 }
 
 function fecharModal() {
-    modal.style.display = "none";
+    const icon = modal.querySelector('.warning-icon');
+    icon.className = 'fas fa-trash-can warning-icon';
+    icon.style.color = '';
+    modal.querySelector('.btn-confirm').innerText = 'Sim';
+    modal.querySelector('.btn-confirm').style.background = '';
+    modal.querySelector('.btn-cancel').innerText  = 'Não';
+
+    const content = modal.querySelector('.modal-content');
+    // Usa cubic-bezier directamente — variáveis CSS não funcionam em style inline
+    content.style.transition = 'transform .32s cubic-bezier(.4,0,1,1), opacity .28s ease';
+    content.style.transform  = 'translateY(100%)';
+    content.style.opacity    = '0';
+
+    // Faz fade do backdrop ao mesmo tempo
+    modal.style.transition   = 'background .32s ease';
+    modal.style.background   = 'rgba(0,0,0,0)';
+
+    setTimeout(() => {
+        modal.style.display     = 'none';
+        modal.style.transition  = '';
+        modal.style.background  = '';
+        content.style.transition = '';
+        content.style.transform  = '';
+        content.style.opacity    = '';
+    }, 320);
 }
 
-function toggleInput(loja) {
-    const el = document.getElementById(`container-${loja}`);
-    if (!el) return;
-    const aAbrir = el.style.display === 'none';
-    el.style.display = aAbrir ? 'flex' : 'none';
+// Swipe para baixo no modal
+(function() {
+    let startY = 0;
+    let currentY = 0;
+    let dragging = false;
 
-    // Eleva/restaura o z-index da secção pai
-    const section = el.closest('.loja-section');
-    if (section) section.style.zIndex = aAbrir ? '100' : '';
-
-    if (aAbrir) document.getElementById(`input-${loja}`).focus();
-}
-
-// ============================================
-// HELPERS DE LOCALSTORAGE
-// ============================================
-
-function obterItens(loja) {
-    try {
-        return JSON.parse(localStorage.getItem(`compras_${loja}`)) || [];
-    } catch {
-        return [];
+    function onTouchStart(e) {
+        if (modal.style.display !== 'flex') return;
+        startY   = e.touches[0].clientY;
+        dragging = true;
+        const content = modal.querySelector('.modal-content');
+        content.style.transition = 'none';
     }
-}
 
-function guardarItens(loja, itens) {
-    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
-}
+    function onTouchMove(e) {
+        if (!dragging) return;
+        currentY = e.touches[0].clientY;
+        const delta = Math.max(0, currentY - startY);
+        const content = modal.querySelector('.modal-content');
+        content.style.transform = `translateY(${delta}px)`;
+        content.style.opacity   = `${1 - delta / 300}`;
+    }
+
+    function onTouchEnd() {
+        if (!dragging) return;
+        dragging = false;
+        const delta   = Math.max(0, currentY - startY);
+        const content = modal.querySelector('.modal-content');
+
+        if (delta > 100) {
+            fecharModal();
+        } else {
+            // Volta suavemente com spring
+            content.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s ease';
+            content.style.transform  = '';
+            content.style.opacity    = '';
+        }
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove',  onTouchMove,  { passive: true });
+    document.addEventListener('touchend',   onTouchEnd);
+})();
 
 // ============================================
 // SERVICE WORKER
 // ============================================
-
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.0.5').then(reg => {
-            reg.update();
-        }).catch(err => {
-            console.warn('SW não registado:', err);
-        });
+        navigator.serviceWorker.register('./sw.js?v=0.0.6')
+            .then(reg => reg.update())
+            .catch(err => console.warn('SW:', err));
     });
 }
 
 // ============================================
 // ARRANQUE
 // ============================================
-
-init();
+mostrarGrade();
 verificarLinkPartilhado();

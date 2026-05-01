@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>A minha Lista</title>
     <script>
         const VERSAO_ATUAL = '0.0.5'; // Subimos para v0.0.5
@@ -18,33 +18,67 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <div class="app-container">
-<header>
-    <h2><i class="fas fa-cart-shopping"></i> A minha Lista</h2>
-</header>
+  <div class="app-container">
 
-<div class="global-actions">
-    <button class="share-all-btn" onclick="partilharTudo()">
+    <!-- ECRÃ 1: Grade de lojas -->
+    <div id="ecra-grade">
+      <div class="grade-topo">
+        <h2 class="grade-topo-titulo"><i class="fas fa-cart-shopping"></i> A minha Lista</h2>
+        <span class="grade-topo-sub">Onde vamos hoje?</span>
+      </div>
+      <button class="grade-share-btn" onclick="partilharTudo()">
         <i class="fas fa-share-nodes"></i> Partilhar todas as listas
-    </button>
-</div>
-        <div id="folheto-conteudo"></div>
+      </button>
+      <div class="grid-lojas" id="grid-lojas"></div>
     </div>
 
-    <div id="confirmModal" class="modal">
-        <div class="modal-content">
-            <i class="fas fa-trash-can warning-icon"></i>
-            <h3></h3>
-            <p></p> 
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="fecharModal()">Não</button>
-                <button class="btn-confirm" onclick="confirmarAcao()">Sim</button>
-            </div>
+    <!-- ECRÃ 2: Lista da loja -->
+    <div id="ecra-lista" style="display:none;">
+      <nav class="lista-nav">
+        <div class="lista-nav-esq">
+          <button class="btn-voltar" onclick="voltarGrade()"><i class="fas fa-chevron-left"></i></button>
+          <img id="lista-loja-logo" src="" alt="">
+          <span id="lista-loja-nome"></span>
         </div>
+        <div class="lista-nav-dir">
+          <button class="btn-nav-icon btn-share" onclick="partilharLojaAtiva()" title="Partilhar esta lista"><i class="fas fa-paper-plane"></i></button>
+          <button class="btn-nav-icon" onclick="abrirModalLimpeza()" title="Limpar concluídos"><i class="fas fa-broom"></i></button>
+          <button class="btn-nav-add" onclick="toggleInput()"><i class="fas fa-plus"></i></button>
+        </div>
+      </nav>
+
+      <div id="lista-input-container" style="display:none;">
+        <input id="lista-input" type="text" placeholder="O que falta?"
+          oninput="mostrarSugestoes()"
+          onkeydown="if(event.key==='Enter') adicionarItem()">
+        <button class="ok-btn" onclick="adicionarItem()">
+          <i class="fas fa-plus"></i> Adicionar
+        </button>
+      </div>
+
+      <div class="lista-scroll">
+        <button class="lista-share-all-btn" onclick="partilharTudo()">
+          <i class="fas fa-share-nodes"></i> Partilhar todas as listas
+        </button>
+        <ul id="lista-itens"></ul>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <i class="fas fa-trash-can warning-icon"></i>
+        <h3></h3>
+        <p></p>
+        <div class="modal-buttons">
+          <button class="btn-cancel" onclick="fecharModal()">Não</button>
+          <button class="btn-confirm" onclick="confirmarAcao()">Sim</button>
+        </div>
+      </div>
     </div>
 
     <div id="toast-container" class="toast-container"></div>
-
-    <script src="app-v2.js?v=0.0.5"></script>
+  </div>
+  <script src="app-v2.js?v=0.0.3"></script>
 </body>
 </html>
