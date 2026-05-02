@@ -1,5 +1,5 @@
 // ============================================
-//   A MINHA LISTA — app-v2.js v0.0.6
+//   A MINHA LISTA — app-v2.js v0.0.7
 // ============================================
 
 const modal = document.getElementById('confirmModal');
@@ -680,7 +680,7 @@ function abrirModalSafe(fn) {
 // ============================================
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.0.6')
+        navigator.serviceWorker.register('./sw.js?v=0.0.7')
             .then(reg => reg.update())
             .catch(err => console.warn('SW:', err));
     });
