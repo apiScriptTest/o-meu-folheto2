@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>A minha Lista</title>
     <script>
-        const VERSAO_ATUAL = '0.0.5'; // Subimos para v0.0.5
+        const VERSAO_ATUAL = '0.0.6'; // Subimos para v0.0.6
         if (localStorage.getItem('app_version') !== VERSAO_ATUAL) {
             navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
             caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
@@ -14,7 +14,7 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style-v2.css?v=0.0.5">
+    <link rel="stylesheet" href="style-v2.css?v=0.0.6">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
