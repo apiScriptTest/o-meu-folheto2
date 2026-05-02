@@ -181,6 +181,7 @@ function abrirLoja(nomeLoja) {
     document.getElementById('lista-input').value = '';
 
     carregarItens(nomeLoja);
+    pushEstado(); // permite interceptar o back gesture dentro da lista
 
     document.addEventListener('touchstart', fecharSugestoesFora, { passive: true });
     document.addEventListener('click', fecharSugestoesFora);
@@ -686,7 +687,31 @@ if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
 }
 
 // ============================================
+// GESTÃO DO HISTÓRICO — bloqueia back gesture
+// ============================================
+
+// Empurra um estado no histórico para ter algo para "voltar"
+function pushEstado() {
+    history.pushState({ pagina: 'lista' }, '');
+}
+
+// Quando o browser dispara "voltar" (swipe de borda ou botão back)
+window.addEventListener('popstate', () => {
+    if (lojaAtiva) {
+        // Está na lista de uma loja — simula o botão voltar
+        voltarGrade();
+        // Empurra novo estado para continuar a interceptar
+        history.pushState({ pagina: 'lista' }, '');
+    } else {
+        // Está na grade — empurra estado para não sair da app
+        history.pushState({ pagina: 'grade' }, '');
+    }
+});
+
+// ============================================
 // ARRANQUE
 // ============================================
 mostrarGrade();
 verificarLinkPartilhado();
+// Estado inicial no histórico — necessário para popstate funcionar
+history.pushState({ pagina: 'grade' }, '');
