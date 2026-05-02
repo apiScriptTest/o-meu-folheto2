@@ -46,14 +46,11 @@
           <button class="btn-nav-add" onclick="toggleInput()"><i class="fas fa-plus"></i></button>
         </div>
       </nav>
-
+      
       <div id="lista-input-container" style="display:none;">
         <input id="lista-input" type="text" placeholder="O que falta?"
-          oninput="mostrarSugestoes()"
-          onkeydown="if(event.key==='Enter') adicionarItem()">
-        <button class="ok-btn" onclick="adicionarItem()">
-          <i class="fas fa-plus"></i> Adicionar
-        </button>
+        oninput="mostrarSugestoes()"
+        onkeydown="if(event.key==='Enter') adicionarItem()">
       </div>
 
       <div class="lista-scroll">

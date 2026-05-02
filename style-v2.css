@@ -311,20 +311,7 @@ input  { font-family: inherit; }
     box-shadow: 0 0 0 3px rgba(79,70,229,.12);
 }
 
-.ok-btn {
-    height: 48px;
-    padding: 0 20px;
-    flex-shrink: 0;
-    background: var(--blue); color: #fff;
-    border-radius: var(--r-pill);
-    font-size: .9rem; font-weight: 800;
-    letter-spacing: .2px;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    box-shadow: 0 4px 14px rgba(79,70,229,.35);
-    transition: transform var(--t) var(--spring), background var(--t), box-shadow var(--t);
-    white-space: nowrap;
-}
-.ok-btn:active { transform: scale(.93); background: #3730a3; box-shadow: none; }
+/* input container sem botão OK */
 
 /* =============================================
    SCROLL + LISTA

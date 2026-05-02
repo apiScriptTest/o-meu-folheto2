@@ -514,6 +514,7 @@ function verificarLinkPartilhado() {
 // ============================================
 
 function abrirModalApagar(id, loja) {
+    if (modalBloqueado) return;
     vibrar(15);
     idParaApagar = id; lojaAlvo = loja; acaoPendente = 'APAGAR_UM';
     modal.querySelector('h3').innerText = 'Apagar item?';
@@ -524,6 +525,7 @@ function abrirModalApagar(id, loja) {
 }
 
 function abrirModalLimpeza() {
+    if (modalBloqueado) return;
     if (!lojaAtiva) return;
     lojaAlvo = lojaAtiva; acaoPendente = 'LIMPAR_FEITOS';
     modal.querySelector('h3').innerText = 'Limpar concluídos?';
@@ -533,10 +535,24 @@ function abrirModalLimpeza() {
     modal.style.display = 'flex';
 }
 
+let modalBloqueado = false;
+
+// Cria um overlay invisível que absorve todos os toques durante X ms
+function bloquearToques(ms = 400) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;';
+    overlay.addEventListener('touchstart', e => e.stopPropagation(), true);
+    overlay.addEventListener('touchend',   e => e.stopPropagation(), true);
+    overlay.addEventListener('click',      e => e.stopPropagation(), true);
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), ms);
+}
+
 function confirmarAcao() {
+    bloquearToques(450); // absorve qualquer toque residual
     if (acaoPendente === 'VOLTAR') {
         fecharModal();
-        mostrarGrade();
+        setTimeout(() => mostrarGrade(), 340);
         return;
     }
 
@@ -553,54 +569,88 @@ function confirmarAcao() {
 }
 
 function fecharModal() {
-    const icon = modal.querySelector('.warning-icon');
-    icon.className = 'fas fa-trash-can warning-icon';
-    icon.style.color = '';
-    modal.querySelector('.btn-confirm').innerText = 'Sim';
-    modal.querySelector('.btn-confirm').style.background = '';
-    modal.querySelector('.btn-cancel').innerText  = 'Não';
+    if (modalBloqueado) return;
+    modalBloqueado = true;
+    bloquearToques(450);
 
     const content = modal.querySelector('.modal-content');
-    // Usa cubic-bezier directamente — variáveis CSS não funcionam em style inline
     content.style.transition = 'transform .32s cubic-bezier(.4,0,1,1), opacity .28s ease';
     content.style.transform  = 'translateY(100%)';
     content.style.opacity    = '0';
-
-    // Faz fade do backdrop ao mesmo tempo
     modal.style.transition   = 'background .32s ease';
     modal.style.background   = 'rgba(0,0,0,0)';
 
     setTimeout(() => {
-        modal.style.display     = 'none';
-        modal.style.transition  = '';
-        modal.style.background  = '';
+        modal.style.display      = 'none';
+        modal.style.transition   = '';
+        modal.style.background   = '';
         content.style.transition = '';
         content.style.transform  = '';
         content.style.opacity    = '';
-    }, 320);
+
+        // Repõe visual SÓ AGORA — quando o modal já está completamente escondido
+        const icon = modal.querySelector('.warning-icon');
+        icon.className   = 'fas fa-trash-can warning-icon';
+        icon.style.color = '';
+        modal.querySelector('.btn-confirm').innerText        = 'Sim';
+        modal.querySelector('.btn-confirm').style.background = '';
+        modal.querySelector('.btn-cancel').innerText         = 'Não';
+
+        modalBloqueado = false;
+    }, 340);
 }
 
-// Swipe para baixo no modal
+function abrirModalSafe(fn) {
+    // Garante que não abre modal enquanto outro está a fechar
+    if (modalBloqueado) return;
+    fn();
+}
+
+// Swipe para baixo no modal + bloqueio de swipe horizontal
 (function() {
+    let startX = 0;
     let startY = 0;
     let currentY = 0;
     let dragging = false;
+    let isHorizontal = false; // detecta se é swipe horizontal
 
     function onTouchStart(e) {
-        if (modal.style.display !== 'flex') return;
-        startY   = e.touches[0].clientY;
-        dragging = true;
-        const content = modal.querySelector('.modal-content');
-        content.style.transition = 'none';
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        isHorizontal = false;
+
+        if (modal.style.display === 'flex') {
+            dragging = true;
+            const content = modal.querySelector('.modal-content');
+            content.style.transition = 'none';
+        }
     }
 
     function onTouchMove(e) {
+        const deltaX = e.touches[0].clientX - startX;
+        const deltaY = e.touches[0].clientY - startY;
+
+        // Determina direcção dominante na primeira jogada
+        if (!isHorizontal && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+            isHorizontal = true;
+        }
+
+        // Bloqueia swipe horizontal para evitar navegação do browser
+        if (isHorizontal) {
+            e.preventDefault();
+            return;
+        }
+
+        // Swipe vertical no modal
         if (!dragging) return;
         currentY = e.touches[0].clientY;
         const delta = Math.max(0, currentY - startY);
         const content = modal.querySelector('.modal-content');
         content.style.transform = `translateY(${delta}px)`;
         content.style.opacity   = `${1 - delta / 300}`;
+        // Previne o scroll/refresh da página ao puxar o modal
+        e.preventDefault();
     }
 
     function onTouchEnd() {
@@ -612,15 +662,15 @@ function fecharModal() {
         if (delta > 100) {
             fecharModal();
         } else {
-            // Volta suavemente com spring
             content.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s ease';
             content.style.transform  = '';
             content.style.opacity    = '';
         }
     }
 
+    // passive: false é obrigatório para poder chamar preventDefault()
     document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove',  onTouchMove,  { passive: true });
+    document.addEventListener('touchmove',  onTouchMove,  { passive: false });
     document.addEventListener('touchend',   onTouchEnd);
 })();
 
