@@ -1,5 +1,5 @@
 // ============================================
-//   A MINHA LISTA — app-v2.js v0.0.7
+//   A MINHA LISTA — app-v2.js v0.0.8
 // ============================================
 
 const modal = document.getElementById('confirmModal');
@@ -45,6 +45,13 @@ const PRODUTOS = [
     { texto: "Lixívia",           icone: "🧴" },
     { texto: "Papel Higiénico",   icone: "🧻" },
     { texto: "Calças",            icone: "👖" },
+    { texto: "Manga",              icone: "🥭" },
+    { texto: "Feijão encarnado",   icone: "🫘" },
+    { texto: "Líquido verde",      icone: "🟢" },
+    { texto: "Farinha",            icone: "🌾" },
+    { texto: "Guardanapos",        icone: "🗞️" },
+    { texto: "Sal grosso",         icone: "🧂" },
+    { texto: "Cebola picada",      icone: "🧅" },
 ];
 
 // ============================================
@@ -94,13 +101,83 @@ function mostrarToast(mensagem) {
     setTimeout(() => toast.remove(), 3000);
 }
 
+// ============================================
+// ARMAZENAMENTO — IndexedDB (com fallback localStorage)
+// ============================================
+// Usamos um cache em memória para que obterItens/guardarItens
+// continuem síncronos; o IndexedDB persiste em background.
+// O IndexedDB NÃO é apagado quando se limpa o "histórico" do Chrome,
+// ao contrário do localStorage.
+
+const DB_NAME    = 'ListaComprasDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'listas';
+let   db         = null;
+const _cache     = {}; // { [loja]: itens[] }
+
+function abrirDB() {
+    return new Promise((resolve, reject) => {
+        if (db) return resolve(db);
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = e => {
+            e.target.result.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = e => { db = e.target.result; resolve(db); };
+        req.onerror   = e => reject(e.target.error);
+    });
+}
+
+function idbGet(loja) {
+    return abrirDB().then(d => new Promise((resolve, reject) => {
+        const tx  = d.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(loja);
+        req.onsuccess = e => resolve(e.target.result || []);
+        req.onerror   = e => reject(e.target.error);
+    }));
+}
+
+function idbSet(loja, itens) {
+    return abrirDB().then(d => new Promise((resolve, reject) => {
+        const tx  = d.transaction(STORE_NAME, 'readwrite');
+        const req = tx.objectStore(STORE_NAME).put(itens, loja);
+        req.onsuccess = () => resolve();
+        req.onerror   = e => reject(e.target.error);
+    }));
+}
+
+// Carrega todas as lojas do IndexedDB para o cache em memória
+// (e migra dados antigos do localStorage, se existirem)
+async function iniciarArmazenamento() {
+    const lojas = window.LOJAS_NOMES || [];
+    for (const loja of lojas) {
+        let itens = await idbGet(loja);
+        // Migração: se IndexedDB está vazio mas localStorage tem dados
+        if (itens.length === 0) {
+            try {
+                const ls = JSON.parse(localStorage.getItem(`compras_${loja}`));
+                if (ls && ls.length > 0) {
+                    itens = ls;
+                    await idbSet(loja, itens);
+                    localStorage.removeItem(`compras_${loja}`); // limpa LS após migrar
+                }
+            } catch {}
+        }
+        _cache[loja] = itens;
+    }
+}
+
 function obterItens(loja) {
-    try { return JSON.parse(localStorage.getItem(`compras_${loja}`)) || []; }
-    catch { return []; }
+    return _cache[loja] || [];
 }
 
 function guardarItens(loja, itens) {
-    localStorage.setItem(`compras_${loja}`, JSON.stringify(itens));
+    _cache[loja] = itens;
+    idbSet(loja, itens).catch(err => {
+        // Fallback para localStorage se IndexedDB falhar
+        try { localStorage.setItem(`compras_${loja}`, JSON.stringify(itens)); }
+        catch {}
+        console.warn('IndexedDB write failed, used localStorage fallback', err);
+    });
 }
 
 function contarPendentes(loja) {
@@ -680,7 +757,7 @@ function abrirModalSafe(fn) {
 // ============================================
 if ('serviceWorker' in navigator && !location.hostname.includes('localhost')) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.0.7')
+        navigator.serviceWorker.register('./sw.js?v=0.0.8')
             .then(reg => reg.update())
             .catch(err => console.warn('SW:', err));
     });
@@ -711,7 +788,12 @@ window.addEventListener('popstate', () => {
 // ============================================
 // ARRANQUE
 // ============================================
-mostrarGrade();
-verificarLinkPartilhado();
+// Expor nomes das lojas para iniciarArmazenamento
+window.LOJAS_NOMES = lojasConfig.map(l => l.nome);
+
+iniciarArmazenamento().then(() => {
+    mostrarGrade();
+    verificarLinkPartilhado();
+});
 // Estado inicial no histórico — necessário para popstate funcionar
 history.pushState({ pagina: 'grade' }, '');
