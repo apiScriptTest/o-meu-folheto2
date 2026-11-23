@@ -3,8 +3,8 @@
   "short_name": "A minha Lista",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2ecc71",
+  "background_color": "#F6F5F0",
+  "theme_color": "#22A06B",
   "description": "A tua lista de compras virtual",
   "icons": [
     {
